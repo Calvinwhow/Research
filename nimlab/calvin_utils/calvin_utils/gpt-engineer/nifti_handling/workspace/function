@@ -1,0 +1,8 @@
+# models.py
+
+def model_func(data):
+    """
+    Model function to be applied to the voxel data.
+    """
+    # Implement model function logic here
+    pass

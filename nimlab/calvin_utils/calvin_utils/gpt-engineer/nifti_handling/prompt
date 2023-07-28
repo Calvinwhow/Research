@@ -1,0 +1,25 @@
+We're working on a Python-based system for large-scale neuroimaging analyses. Our data is in 4D Nifti files where the fourth dimension corresponds to patients. We need to develop a system that can load these files, preprocess the voxel data (standardization and masking), and organize the data for further analysis. The goal is to have the data ready to be input into various models for analysis.
+
+We need to implement these strategies:
+
+Parallel Processing: Preprocess multiple voxels simultaneously.
+Efficient Disk I/O: Minimize disk operations by processing a chunk of voxels at once.
+Memory Mapping: Use memory-mapped I/O for Nifti files.
+Error Handling: If preprocessing fails for a voxel, catch the error, print a message, and set the value to NaN.
+Return the preprocessed data.
+
+def load_nifti_file(file_path):
+    # Load a Nifti file with memory mapping
+
+def create_mask(mask_path=None, mask_threshold=0.2):
+    # Create a mask with the given threshold
+
+def standardize_data(data, standardize=True):
+    # Standardize data (zero mean and unit variance)
+
+def process_voxel(voxel_index, nifti_files, model_func, standardize=True):
+    # Extract data, mask and standardize it, apply model function
+
+def main(design_matrix_path, model_func, mask_path=None, mask_threshold=0.2, standardize=True):
+    # Load design matrix, Nifti files, create mask, process voxels in parallel
+
