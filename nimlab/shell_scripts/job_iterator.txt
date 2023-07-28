@@ -1,0 +1,3 @@
+for i in {1..8000}; do bsub -J med_mod -u choward12@bwh.harvard.edu -o /PHShome/cu135/terminal_outputs/med_mod.txt -e /PHShome/cu135/terminal_outputs/med_mod.txt -q normal -R 'rusage[mem=6000]' python /PHShome/cu135/python_scripts/launch_multiprocessed_mediated_moderation.py -o /PHShome/cu135/permutation_tests/mediated_moderation/results -cwd /PHShome/cu135/python_script -w 5; done
+
+/PHShome/cu135/memory/age_binarized_r_maps/default_analysis/palm_results

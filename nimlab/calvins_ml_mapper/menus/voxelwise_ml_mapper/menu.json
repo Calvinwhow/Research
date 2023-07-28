@@ -1,0 +1,37 @@
+{
+    "1": {
+        "step": 1,
+        "label": "Enter path to CSV data file",
+        "functions": ["get_data_path"]
+    },
+    "2": {
+        "step": 2,
+        "label": "Enter outcome column index",
+        "functions": ["get_outcome_col"]
+    },
+    "3": {
+        "step": 3,
+        "label": "Enter clinical variables indices separated by comma",
+        "functions": ["get_clinical_vars"]
+    },
+    "4": {
+        "step": 4,
+        "label": "Enter voxel start index",
+        "functions": ["get_voxel_start_index"]
+    },
+    "5": {
+        "step": 5,
+        "label": "Enter model type (linear, logistic, or ridge)",
+        "functions": ["get_model_type"]
+    },
+    "6": {
+        "step": 6,
+        "label": "Enter interaction effects indices separated by comma (or leave empty if not applicable)",
+        "functions": ["get_interaction_effects"]
+    },
+    "7": {
+        "step": 7,
+        "label": "Run voxelwise_regression",
+        "functions": ["run_voxelwise_regression"]
+    }
+}

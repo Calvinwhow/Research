@@ -1,0 +1,47 @@
+Architecture:
+project_name/
+├── main.py
+├── tasks/
+│   ├── __init__.py
+│   ├── task1.py
+│   ├── task2.py
+│   └── ...
+├── utils/
+│   ├── __init__.py
+│   ├── cli_resource_printer.py
+│   ├── data_importer.py
+│   └── ...
+├── resources/
+│   ├── screen1.txt
+│   ├── screen2.txt
+│   └── ...
+└── tests/
+    ├── __init__.py
+    ├── test_task1.py
+    ├── test_task2.py
+    └── ...
+
+Workflow
+1) Main screen, allowing user to choose a task
+2) Data import style
+    a) decide how they would like to import
+        i) import from a path using glob
+            a) they will need to provide the path, and they will need to provide a unique file identifier that glob can use. If the absolute path is provided, they write no identifier.
+        ii) import from a path to a csv with file paths in it
+3) Import neuroimaging Data
+4) Import clinical data
+5) perform a merge of neuroimaging data to the clinical data using subject_id.
+6) Launch the specific task. 
+
+Task Workflow
+1) Define the machine learning method (logit, linear, ridge, multilayer perceptron, etc)
+2) Define independent variables and dependent variables
+3) Define interaction effects
+4) Perform leave-one-out-cross validations
+    a) Calculate accuracy (for classification problems) or root mean squared error for regression problems (also derive Pearson's R and P of yhat to y) 
+5) Perform n-permutations of leave-one-out-cross validations
+    a) Calculate accuracy (for classification problems) or root mean squared error for regression problems (also derive Pearson's R and P of yhat to y) 
+6) Derive p-value of the accuracy or error/correlation coefficient for the LOOCV compared to permuted LOOCV. 
+
+Backend
+1) Learn to write unit-tests. 

@@ -1,0 +1,47 @@
+{
+    "name": "connectivity",
+    "entities": [
+        {
+            "name": "subject",
+            "pattern": "[/\\\\]+sub-([a-zA-Z0-9]+)",
+            "directory": "{subject}"
+        },
+        {
+            "name": "connectome",
+            "pattern": "[_/\\\\]+tome-([a-zA-Z0-9]+)"
+        },
+        {
+            "name": "coordinateSystem",
+            "pattern": "[_/\\\\]+space-([a-zA-Z0-9]+)"
+        },
+        {
+            "name": "hemisphere",
+            "pattern": "[_/\\\\]+hemi-([a-zA-Z0-9]+)"
+        },
+        {
+            "name": "statistic",
+            "pattern": "[_/\\\\]+stat-([a-zA-Z0-9]+)"
+        },
+        {
+            "name": "suffix",
+            "pattern": "[._]*([a-zA-Z0-9]*?)\\.[^/\\\\]+$"
+        },
+        {
+            "name": "extension",
+            "pattern": "[._]*[a-zA-Z0-9]*?(\\.[^/\\\\]+)$"
+        },
+        {
+            "name": "datatype",
+            "pattern": "[/\\\\]+(roi|connectivity)[/\\\\]+"
+        }
+    ],
+    "default_path_patterns": [
+        "sub-{subject}/{datatype<roi>}/sub-{subject}_hemi-{hemisphere<L|R>}_space-{coordinateSystem<2mm|1mm|fs3|fs4|fs5|fs6|fs7|original>}_{suffix<lesionMask|atrophyMap>|lesionMask}{extension<.nii|.nii.gz|.gii|.json>|.nii.gz}",
+        "sub-{subject}/{datatype<roi>}/sub-{subject}_hemi-{hemisphere<L|R>}_{suffix<lesionMask|atrophyMap>|lesionMask}{extension<.nii|.nii.gz|.gii|.json>|.nii.gz}",
+        "sub-{subject}/{datatype<roi>}/sub-{subject}_space-{coordinateSystem<2mm|1mm|fs3|fs4|fs5|fs6|fs7|original>}_{suffix<lesionMask|atrophyMap>|lesionMask}{extension<.nii|.nii.gz|.gii|.json>|.nii.gz}",
+        "sub-{subject}/{datatype<roi>}/sub-{subject}_{suffix<lesionMask|atrophyMap>|lesionMask}{extension<.nii|.nii.gz|.gii|.json>|.nii.gz}",
+        "sub-{subject}/{datatype<connectivity>}/sub-{subject}_hemi-{hemisphere<L|R>}_tome-{connectome}_space-{coordinateSystem<2mm|1mm|fs3|fs4|fs5|fs6|fs7|original>}_stat-{statistic}_{suffix<conn>|conn}{extension<.nii|.nii.gz|.gii|.json|.mat|.trk.gz|.connectivity.mat|.txt|.connectogram.txt|.node|.edge|.trk.gz.tdi.nii.gz>|.nii.gz}",
+        "sub-{subject}/{datatype<connectivity>}/sub-{subject}_tome-{connectome}_space-{coordinateSystem<2mm|1mm|fs3|fs4|fs5|fs6|fs7|original>}_stat-{statistic}_{suffix<conn>|conn}{extension<.nii|.nii.gz|.gii|.json|.mat|.trk.gz|.connectivity.mat|.txt|.connectogram.txt|.node|.edge|.trk.gz.tdi.nii.gz>|.nii.gz}",
+        "sub-{subject}/{datatype<connectivity>}/sub-{subject}_tome-{connectome}_stat-{statistic}_{suffix<conn>|conn}{extension<.nii|.nii.gz|.gii|.json|.mat|.trk.gz|.connectivity.mat|.txt|.connectogram.txt|.node|.edge|.trk.gz.tdi.nii.gz>|.nii.gz}"
+    ]
+}
