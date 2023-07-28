@@ -1,5 +1,5 @@
 '''
-3) AllResolutionInference
+1) AllResolutionInference
 -------------------------
 This module contains the AllResolutionInference class, which is designed to perform "All-Resolution Inference" on NIfTI files.
 

@@ -36,10 +36,17 @@ def replace_hyphens(data_df):
     data_df.columns = [col.replace('-', '_') for col in data_df.columns]
     return data_df
 
-def preprocess_colnames_for_regression(data_df):
-    data_df = remove_column_spaces(data_df.reset_index(drop=True))
-    data_df = add_prefix_to_numeric_cols(data_df)
-    data_df = replace_hyphens(data_df)
+def column_names_to_str(data_df):
+    """
+    This function replaces numbers in column names with strings.
+
+    Parameters:
+    - data_df: DataFrame, the DataFrame to modify.
+
+    Returns:
+    - DataFrame with modified column names.
+    """
+    data_df.columns = [str(col) for col in data_df.columns]
     return data_df
 
 def save_dataframes_to_csv(outcome_dfs, covariate_dfs, voxelwise_dfs, path_to_dataframes):
@@ -79,3 +86,10 @@ def save_dataframes_to_csv(outcome_dfs, covariate_dfs, voxelwise_dfs, path_to_da
         paths["voxelwise"].append(file_path)
 
     return paths
+
+def preprocess_colnames_for_regression(data_df):
+    data_df = column_names_to_str(data_df)
+    data_df = remove_column_spaces(data_df)
+    data_df = add_prefix_to_numeric_cols(data_df)
+    data_df = replace_hyphens(data_df)
+    return data_df
