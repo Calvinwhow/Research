@@ -75,7 +75,7 @@ if __name__=='__main__':
         neuroimaging_matrix = pd.read_csv(path)
         neuroimaging_dfs.append(neuroimaging_matrix)		
     #----------------------------------------------------------------Generate Observed Distribution
-    with MemoryCheckingExecutor(max_workers=int(args.n_cores), threshold_memory_gb=int(args.memory_per_job)) as executor:
+    with MemoryCheckingExecutor(max_workers=int(args.n_cores), task_memory_gb=int(args.memory_per_job)) as executor:
         # Begin submitting the masked data to the permutor
         results = []
         for i in tqdm(range(int(args.n_cores)), desc="Jobs Launched"):
