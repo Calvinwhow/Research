@@ -126,20 +126,28 @@ class LSFJob(Job):
         construct_command(n_jobs): Returns the job command specific to the LSF job scheduler.
     """
         
-    def __init__(self, gb_requested, n_jobs, *args, **kwargs):
+    def __init__(self, gb_requested, n_jobs, environment_activation_string=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.mem_limit = gb_requested * 1000  # Convert to ~MB (actually *1024)
         self.resource_req = f"rusage[mem={self.mem_limit}] span[ptile={self.cpus}]" 
         self.n_jobs = n_jobs
+        self.env_activate = environment_activation_string
             
     def construct_command(self):
         """
         Returns the job command specific to the LSF job scheduler.
         """
-        if self.n_jobs:  # If n_jobs is defined
-            job_command = f"bsub -q {self.queue} -n {self.cpus} -R '{self.resource_req}' -M {self.mem_limit} -o {self.output_dir}/{self.job_name}_%I.txt -J '{self.job_name}[1-{self.n_jobs}]' -u {self.user_email} -B -N -cwd {self.work_dir} python {self.script_path} {self.options if self.options else ''}"
-        else:  # If n_jobs is not defined
-            job_command = f"bsub -q {self.queue} -n {self.cpus} -R '{self.resource_req}' -M {self.mem_limit} -o {self.output_dir}/{self.job_name}_%I.txt -J '{self.job_name}' -u {self.user_email} -B -N -cwd {self.work_dir} python {self.script_path} {self.options if self.options else ''}"
+        if self.env_activate is not None:
+            activation_string = f"source ~/.bashrc && {self.env_activate}"
+            if self.n_jobs:  # If n_jobs is defined
+                job_command = f"bsub -q {self.queue} -n {self.cpus} -R '{self.resource_req}' -M {self.mem_limit} -o {self.output_dir}/{self.job_name}_%I.txt -J '{self.job_name}[1-{self.n_jobs}]' -u {self.user_email} -B -N -cwd {self.work_dir} '{activation_string} && python {self.script_path} {self.options if self.options else ''}'"
+            else:  # If n_jobs is not defined
+                job_command = f"bsub -q {self.queue} -n {self.cpus} -R '{self.resource_req}' -M {self.mem_limit} -o {self.output_dir}/{self.job_name}_%I.txt -J '{self.job_name}' -u {self.user_email} -B -N -cwd {self.work_dir} '{activation_string} && python {self.script_path} {self.options if self.options else ''}'"
+        else:
+            if self.n_jobs:  # If n_jobs is defined
+                job_command = f"bsub -q {self.queue} -n {self.cpus} -R '{self.resource_req}' -M {self.mem_limit} -o {self.output_dir}/{self.job_name}_%I.txt -J '{self.job_name}[1-{self.n_jobs}]' -u {self.user_email} -B -N -cwd {self.work_dir} && python {self.script_path} {self.options if self.options else ''}'"
+            else:  # If n_jobs is not defined
+                job_command = f"bsub -q {self.queue} -n {self.cpus} -R '{self.resource_req}' -M {self.mem_limit} -o {self.output_dir}/{self.job_name}_%I.txt -J '{self.job_name}' -u {self.user_email} -B -N -cwd {self.work_dir}  && python {self.script_path} {self.options if self.options else ''}'"
         return job_command
 
 

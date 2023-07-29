@@ -118,19 +118,24 @@ class ScpTransfer:
         client = self._connect_to_server()
 
         sftp = client.open_sftp()
-
+        
+        dict_files_remote = {}
         for subdir, local_files in dict_files.items():
             # Create the destination subdirectory on the server
             remote_subdir_path = os.path.join(base_remote_path, subdir)
             stdin, stdout, stderr = client.exec_command(f'mkdir -p {remote_subdir_path}')
             stdout.channel.recv_exit_status()
 
+            remote_files = []
             # Transfer each local file to the new subdirectory on the server
             for local_file in local_files:
                 local_file_path = os.path.abspath(local_file)
                 remote_file_path = os.path.join(remote_subdir_path, os.path.basename(local_file))
                 sftp.put(local_file_path, remote_file_path)
                 print(f'Successfully transferred {local_file_path} to {remote_file_path}.')
-
+                remote_files.append(remote_file_path)
+                
+        dict_files_remote[subdir] = remote_files
         sftp.close()
         client.close()
+        return dict_files_remote
