@@ -43,6 +43,7 @@ if __name__=='__main__':
     from calvin_utils.permutation_analysis_utils.multiprocessing_utils.memory_management import MemoryCheckingExecutor
     from calvin_utils.file_utils.script_printer import ScriptInfo
     from calvin_utils.permutation_analysis_utils.scripts_for_submission.script_descriptions import script_dict
+    from concurrent.futures import ProcessPoolExecutor, as_completed
 
 
     #----------------------------------------------------------------Begin User Input
@@ -75,14 +76,14 @@ if __name__=='__main__':
         neuroimaging_matrix = pd.read_csv(path)
         neuroimaging_dfs.append(neuroimaging_matrix)		
     #----------------------------------------------------------------Generate Observed Distribution
-    with MemoryCheckingExecutor(max_workers=int(args.n_cores), task_memory_gb=int(args.memory_per_job)) as executor:
+    # with MemoryCheckingExecutor(max_workers=int(args.n_cores), task_memory_gb=int(args.memory_per_job)) as executor: #<----to implement later
+    with ProcessPoolExecutor(max_workers=int(args.n_cores)) as executor:
         # Begin submitting the masked data to the permutor
         results = []
         for i in tqdm(range(int(args.n_cores)), desc="Jobs Launched"):
             #----------------------------------------------------------------perform the permutation
             # Permute the patient labels
             permuted_patient_labels = permute_column(unpermuted_outcome_df.index.to_numpy(), looped_permutation=True).reshape(-1)
-            print(permuted_patient_labels)
             
             outcomes_df = unpermuted_outcome_df.copy()
             outcomes_df.index = permuted_patient_labels

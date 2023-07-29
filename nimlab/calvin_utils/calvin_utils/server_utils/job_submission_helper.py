@@ -139,15 +139,13 @@ class LSFJob(Job):
         Returns the job command specific to the LSF job scheduler.
         """
         activation_string = f"source ~/.bashrc && {self.env_activate} && " if self.env_activate else ""
+
+        # Add quotation marks and escape sequences around each input path
+        self.options = ' '.join([f'\"{opt}\"' for opt in self.options.split() if opt.startswith('[') and opt.endswith(']')])
+
         if self.n_jobs:  # If n_jobs is defined
-            job_command = f"bsub -q {self.queue} -n {self.cpus} -R '{self.resource_req}' -M {self.mem_limit} -o {self.output_dir}/{self.job_name}_%I.txt -J '{self.job_name}[1-{self.n_jobs}]' -u {self.user_email} -B -N -cwd {self.work_dir} {activation_string} python {self.script_path} {self.options if self.options else ''}"
+            job_command = f"bsub -q {self.queue} -n {self.cpus} -R '{self.resource_req}' -M {self.mem_limit} -o {self.output_dir}/{self.job_name}_%I.txt -J '{self.job_name}[1-{self.n_jobs}]' -u {self.user_email} -B -N -cwd {self.work_dir} '{activation_string} python {self.script_path} {self.option}'"
         else:  # If n_jobs is not defined
-            job_command = f"bsub -q {self.queue} -n {self.cpus} -R '{self.resource_req}' -M {self.mem_limit} -o {self.output_dir}/{self.job_name}.txt -J '{self.job_name}' -u {self.user_email} -B -N -cwd {self.work_dir} {activation_string} python {self.script_path} {self.options if self.options else ''}"
+            job_command = f"bsub -q {self.queue} -n {self.cpus} -R '{self.resource_req}' -M {self.mem_limit} -o {self.output_dir}/{self.job_name}.txt -J '{self.job_name}' -u {self.user_email} -B -N -cwd {self.work_dir} '{activation_string} python {self.script_path} {self.options}'"
         return job_command
-
-
-
-
-
-
 
