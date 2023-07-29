@@ -81,18 +81,24 @@ class JobSubmitter:
         self.job = job
 
     def submit_jobs(self, n_jobs):
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(self.server.server_name, username=self.server.username, password=self.server.password)
-        
-        job_command = self.job.construct_command(n_jobs)
-        stdin, stdout, stderr = ssh.exec_command(job_command)
-        
-        # Capture and print any output
-        for line in stdout:
-            print(line.strip('\n'))
-        
-        ssh.close()
+        try:
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh.connect(self.server.server_name, username=self.server.username, password=self.server.password)
+            
+            job_command = self.job.construct_command(n_jobs)
+            stdin, stdout, stderr = ssh.exec_command(job_command)
+            
+            # Capture and print any output
+            for line in stdout:
+                print(line.strip('\n'))
+            
+            ssh.close()
+        except Exception as e:
+            print(f"Failed to submit jobs due to error: {e}")
+            return False
+
+        return True
 
 class LSFServer(Server):
     """
@@ -118,22 +124,24 @@ class LSFJob(Job):
     Overridden Methods:
         construct_command(n_jobs): Returns the job command specific to the LSF job scheduler.
     """
-
-    def __init__(self, cpus, Gb_requested, *args, **kwargs):
+        
+    def __init__(self, gb_requested, n_jobs, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.cpus = cpus
-        self.mem_limit = Gb_requested * 1000  # Convert to ~MB (actually *1024)
-        self.resource_req = f"rusage[mem={self.mem_limit}] span[ptile={self.cpus}]"  # set the resource_req
-
-    def construct_command(self, n_jobs):
+        self.mem_limit = gb_requested * 1000  # Convert to ~MB (actually *1024)
+        self.resource_req = f"rusage[mem={self.mem_limit}] span[ptile={self.cpus}]" 
+        self.n_jobs = n_jobs
+            
+    def construct_command(self):
         """
         Returns the job command specific to the LSF job scheduler.
-
-        Args:
-            n_jobs (int): The number of jobs to submit.
         """
-        job_command = f"bsub -q {self.queue} -n {self.cpus} -R '{self.resource_req}' -M {self.mem_limit} -o {self.output_dir}/{self.job_name}_%I.txt -J '{self.job_name}[1-{n_jobs}]' -u {self.user_email} -B -N -cwd {self.work_dir} python {self.script_path} {self.options if self.options else ''}"
+        
+        if self.n_jobs:  # If n_jobs is defined
+            job_command = f"bsub -q {self.queue} -n {self.cpus} -R '{self.resource_req}' -M {self.mem_limit} -o {self.output_dir}/{self.job_name}_%I.txt -J '{self.job_name}[1-{self.n_jobs}]' -u {self.user_email} -B -N -cwd {self.work_dir} python {self.script_path} {self.options if self.options else ''}"
+        else:  # If n_jobs is not defined
+            job_command = f"bsub -q {self.queue} -n {self.cpus} -R '{self.resource_req}' -M {self.mem_limit} -o {self.output_dir}/{self.job_name}_%I.txt -J '{self.job_name}' -u {self.user_email} -B -N -cwd {self.work_dir} python {self.script_path} {self.options if self.options else ''}"
         return job_command
+
 
 
 
