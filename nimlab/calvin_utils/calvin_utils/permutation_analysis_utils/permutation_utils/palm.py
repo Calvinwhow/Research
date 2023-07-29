@@ -16,6 +16,9 @@ def permute_column(array_to_permute, looped_permutation=False):
     Permuted array of same shape as array_to_permute
     '''
     # Permute each patient's data
+    if array_to_permute.ndim == 1:
+        array_to_permute = array_to_permute.reshape(-1, 1)
+    
     if looped_permutation:   
         #Permute columns
         for i in range(0, array_to_permute.shape[1]):
