@@ -81,14 +81,14 @@ if __name__=='__main__':
         for i in tqdm(range(int(args.n_cores)), desc="Jobs Launched"):
             #----------------------------------------------------------------perform the permutation
             # Permute the patient labels
-            permuted_patient_labels = permute_column(unpermuted_outcome_df.index.to_numpy(), looped_permutation=True)
+            permuted_patient_labels = permute_column(unpermuted_outcome_df.index.to_numpy(), looped_permutation=True).reshape(-1)
             
             outcomes_df = unpermuted_outcome_df.copy()
             outcomes_df.index = permuted_patient_labels
             for clin_df in clinical_dfs:
-                clin_df.index = permute_column(clin_df.index.to_numpy(), looped_permutation=True)
+                clin_df.index = permute_column(clin_df.index.to_numpy(), looped_permutation=True).reshape(-1)
             for neuroimaging_df in neuroimaging_dfs:
-                neuroimaging_df.index = permute_column(neuroimaging_df.index.to_numpy(), looped_permutation=True)
+                neuroimaging_df.index = permute_column(neuroimaging_df.index.to_numpy(), looped_permutation=True).reshape(-1)
             #----------------------------------------------------------------Submit the job
             # Submit the matrix for calculation
             result = executor.submit(voxelwise_interaction_f_stat, outcomes_df, neuroimaging_dfs, clinical_dfs,
