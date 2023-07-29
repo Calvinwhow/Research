@@ -99,7 +99,8 @@ class JobSubmitter:
             self.submitted = True
         except Exception as e:
             print(f"Failed to submit jobs due to error: {e}")
-        return 
+            self.submitted = False
+        return print('Job submitted successfully: ', self.submitted)
 
 class LSFServer(Server):
     """
@@ -137,17 +138,11 @@ class LSFJob(Job):
         """
         Returns the job command specific to the LSF job scheduler.
         """
-        if self.env_activate is not None:
-            activation_string = f"source ~/.bashrc && {self.env_activate}"
-            if self.n_jobs:  # If n_jobs is defined
-                job_command = f"bsub -q {self.queue} -n {self.cpus} -R '{self.resource_req}' -M {self.mem_limit} -o {self.output_dir}/{self.job_name}_%I.txt -J '{self.job_name}[1-{self.n_jobs}]' -u {self.user_email} -B -N -cwd {self.work_dir} '{activation_string} && python {self.script_path} {self.options if self.options else ''}'"
-            else:  # If n_jobs is not defined
-                job_command = f"bsub -q {self.queue} -n {self.cpus} -R '{self.resource_req}' -M {self.mem_limit} -o {self.output_dir}/{self.job_name}_%I.txt -J '{self.job_name}' -u {self.user_email} -B -N -cwd {self.work_dir} '{activation_string} && python {self.script_path} {self.options if self.options else ''}'"
-        else:
-            if self.n_jobs:  # If n_jobs is defined
-                job_command = f"bsub -q {self.queue} -n {self.cpus} -R '{self.resource_req}' -M {self.mem_limit} -o {self.output_dir}/{self.job_name}_%I.txt -J '{self.job_name}[1-{self.n_jobs}]' -u {self.user_email} -B -N -cwd {self.work_dir} && python {self.script_path} {self.options if self.options else ''}'"
-            else:  # If n_jobs is not defined
-                job_command = f"bsub -q {self.queue} -n {self.cpus} -R '{self.resource_req}' -M {self.mem_limit} -o {self.output_dir}/{self.job_name}_%I.txt -J '{self.job_name}' -u {self.user_email} -B -N -cwd {self.work_dir}  && python {self.script_path} {self.options if self.options else ''}'"
+        activation_string = f"source ~/.bashrc && {self.env_activate} &&"
+        if self.n_jobs:  # If n_jobs is defined
+            job_command = f"bsub -q {self.queue} -n {self.cpus} -R '{self.resource_req}' -M {self.mem_limit} -o {self.output_dir}/{self.job_name}_%I.txt -J '{self.job_name}[1-{self.n_jobs}]' -u {self.user_email} -B -N -cwd {self.work_dir} {activation_string if activation_string is not None else ''} python {self.script_path} {self.options if self.options else ''}"
+        else:  # If n_jobs is not defined
+            job_command = f"bsub -q {self.queue} -n {self.cpus} -R '{self.resource_req}' -M {self.mem_limit} -o {self.output_dir}/{self.job_name}_%I.txt -J '{self.job_name}' -u {self.user_email} -B -N -cwd {self.work_dir} {activation_string if activation_string is not None else ''} python {self.script_path} {self.options if self.options else ''}"
         return job_command
 
 
