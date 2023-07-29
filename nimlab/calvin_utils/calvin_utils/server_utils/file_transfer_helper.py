@@ -135,7 +135,7 @@ class ScpTransfer:
                 print(f'Successfully transferred {local_file_path} to {remote_file_path}.')
                 remote_files.append(remote_file_path)
                 
-        dict_files_remote[subdir] = remote_files
+            dict_files_remote[subdir] = remote_files
         sftp.close()
         client.close()
         return dict_files_remote

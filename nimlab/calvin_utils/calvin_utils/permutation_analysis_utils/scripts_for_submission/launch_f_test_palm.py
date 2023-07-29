@@ -29,54 +29,54 @@ neuroimaging_df_paths: list of str
     The paths to the voxelwise neuroimaging data csv files.
 """
 
-
-#Imports
-import numpy as np
-from tqdm import tqdm
-import os
-import pandas as pd
-import concurrent.futures
-from calvin_utils.permutation_analysis_utils.permutation_utils.palm import permute_column
-from calvin_utils.statistical_utils.voxelwise_statistical_testing import voxelwise_interaction_f_stat
-from calvin_utils.permutation_analysis_utils.multiprocessing_utils.memory_management import MemoryCheckingExecutor
-from calvin_utils.file_utils.script_printer import ScriptInfo
-from calvin_utils.permutation_analysis_utils.scripts_for_submission.script_descriptions import script_dict
-
-
-#----------------------------------------------------------------Begin User Input
-script_info = ScriptInfo(script_dict)
-parser = script_info.create_argparse_parser('launch_f_test_palm.py')
-args = parser.parse_args()
-print(args)
-
-#This is the example dict:
-'''                "n_cores": "The number of cores per job submission cpu (4 is a good default).",
-                "out_dir": "The output directory where the result csv files will be saved.",
-                "job_name": "The job name for identification.",
-                "memory_per_job": "The memory (in gigabytes) per job submission cpu. General max is 40 up to 498 Gb.",
-                "outcome_data_path": "The path to the outcome data csv file.",
-                "clinical_covariate_paths": "The paths to the clinical covariate data csv files.",
-                "neuroimaging_df_paths": "The paths to the voxelwise neuroimaging data csv files."
-            }
-'''
-# # Gather information from script_descriptions.py
-# n_permutations = 500
-# out_dir = '/PHShome/cu135/permutation_tests/f_test/age_by_stim_ad_dbs_redone/results/tmp'
-# job_name = 'ftest_bm'
-
-# outcome_data_path = '/PHShome/cu135/permutation_tests/f_test/age_by_stim_ad_dbs_redone/inputs/outcomes/outcome_data_1.csv'
-# clinical_covariate_paths = ['/PHShome/cu135/permutation_tests/f_test/age_by_stim_ad_dbs_redone/inputs/covariates/covariate_data_1.csv']
-# neuroimaging_df_paths = ['/PHShome/cu135/permutation_tests/f_test/age_by_stim_ad_dbs_redone/inputs/voxelwise/voxelwise_data_1.csv']
-
-# cores = 16
-# memory_requested = np.round(498*75)
-#----------------------------------------------------------------END USER INPUT----------------------------------------------------------------
 if __name__=='__main__':
+
+    #Imports
+    import numpy as np
+    from tqdm import tqdm
+    import os
+    import pandas as pd
+    import concurrent.futures
+    from calvin_utils.permutation_analysis_utils.permutation_utils.palm import permute_column
+    from calvin_utils.statistical_utils.voxelwise_statistical_testing import voxelwise_interaction_f_stat
+    from calvin_utils.permutation_analysis_utils.multiprocessing_utils.memory_management import MemoryCheckingExecutor
+    from calvin_utils.file_utils.script_printer import ScriptInfo
+    from calvin_utils.permutation_analysis_utils.scripts_for_submission.script_descriptions import script_dict
+
+
+    #----------------------------------------------------------------Begin User Input
+    script_info = ScriptInfo(script_dict)
+    parser = script_info.create_argparse_parser('launch_f_test_palm.py')
+    args = parser.parse_args()
+    print(args)
+
+    #This is the example dict:
+    '''                "n_cores": "The number of cores per job submission cpu (4 is a good default).",
+                    "out_dir": "The output directory where the result csv files will be saved.",
+                    "job_name": "The job name for identification.",
+                    "memory_per_job": "The memory (in gigabytes) per job submission cpu. General max is 40 up to 498 Gb.",
+                    "outcome_data_path": "The path to the outcome data csv file.",
+                    "clinical_covariate_paths": "The paths to the clinical covariate data csv files.",
+                    "neuroimaging_df_paths": "The paths to the voxelwise neuroimaging data csv files."
+                }
+    '''
+    # # Gather information from script_descriptions.py
+    # n_permutations = 500
+    # out_dir = '/PHShome/cu135/permutation_tests/f_test/age_by_stim_ad_dbs_redone/results/tmp'
+    # job_name = 'ftest_bm'
+
+    # outcome_data_path = '/PHShome/cu135/permutation_tests/f_test/age_by_stim_ad_dbs_redone/inputs/outcomes/outcome_data_1.csv'
+    # clinical_covariate_paths = ['/PHShome/cu135/permutation_tests/f_test/age_by_stim_ad_dbs_redone/inputs/covariates/covariate_data_1.csv']
+    # neuroimaging_df_paths = ['/PHShome/cu135/permutation_tests/f_test/age_by_stim_ad_dbs_redone/inputs/voxelwise/voxelwise_data_1.csv']
+
+    # cores = 16
+    # memory_requested = np.round(498*75)
+    #----------------------------------------------------------------END USER INPUT----------------------------------------------------------------
     #Prepare inputs and outputs
     os.makedirs(args.out_dir, exist_ok=True)
 
     # Prepare outcome_df
-    unpermuted_outcome_df = pd.read_csv(args.outcome_data_path)
+    unpermuted_outcome_df = pd.read_csv(args.outcome_data_path[0])
 
     # Prepare clinical_dfs containing the covariates
     clinical_dfs = []
