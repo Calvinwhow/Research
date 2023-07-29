@@ -32,6 +32,7 @@ neuroimaging_df_paths: list of str
 if __name__=='__main__':
 
     #Imports
+    import ast
     import numpy as np
     from tqdm import tqdm
     import os
@@ -48,29 +49,13 @@ if __name__=='__main__':
     script_info = ScriptInfo(script_dict)
     parser = script_info.create_argparse_parser('launch_f_test_palm.py')
     args = parser.parse_args()
+    
+    # Parse the list arguments as actual lists (not strings)
+    args.outcome_data_path = ast.literal_eval(args.outcome_data_path)
+    args.clinical_covariate_paths = ast.literal_eval(args.clinical_covariate_paths)
+    args.neuroimaging_df_paths = ast.literal_eval(args.neuroimaging_df_paths)
+
     print(args)
-
-    #This is the example dict:
-    '''                "n_cores": "The number of cores per job submission cpu (4 is a good default).",
-                    "out_dir": "The output directory where the result csv files will be saved.",
-                    "job_name": "The job name for identification.",
-                    "memory_per_job": "The memory (in gigabytes) per job submission cpu. General max is 40 up to 498 Gb.",
-                    "outcome_data_path": "The path to the outcome data csv file.",
-                    "clinical_covariate_paths": "The paths to the clinical covariate data csv files.",
-                    "neuroimaging_df_paths": "The paths to the voxelwise neuroimaging data csv files."
-                }
-    '''
-    # # Gather information from script_descriptions.py
-    # n_permutations = 500
-    # out_dir = '/PHShome/cu135/permutation_tests/f_test/age_by_stim_ad_dbs_redone/results/tmp'
-    # job_name = 'ftest_bm'
-
-    # outcome_data_path = '/PHShome/cu135/permutation_tests/f_test/age_by_stim_ad_dbs_redone/inputs/outcomes/outcome_data_1.csv'
-    # clinical_covariate_paths = ['/PHShome/cu135/permutation_tests/f_test/age_by_stim_ad_dbs_redone/inputs/covariates/covariate_data_1.csv']
-    # neuroimaging_df_paths = ['/PHShome/cu135/permutation_tests/f_test/age_by_stim_ad_dbs_redone/inputs/voxelwise/voxelwise_data_1.csv']
-
-    # cores = 16
-    # memory_requested = np.round(498*75)
     #----------------------------------------------------------------END USER INPUT----------------------------------------------------------------
     #Prepare inputs and outputs
     os.makedirs(args.out_dir, exist_ok=True)
@@ -87,8 +72,8 @@ if __name__=='__main__':
     # prepare neuroimaging_dfs containing voxelwise data
     neuroimaging_dfs = []
     for path in args.neuroimaging_df_paths:
-        neuroiamging_matrix = pd.read_csv(path)
-        neuroimaging_dfs.append(neuroiamging_matrix)		
+        neuroimaging_matrix = pd.read_csv(path)
+        neuroimaging_dfs.append(neuroimaging_matrix)		
     #----------------------------------------------------------------Generate Observed Distribution
     with MemoryCheckingExecutor(max_workers=int(args.n_cores), threshold_memory_gb=int(args.memory_per_job)) as executor:
         # Begin submitting the masked data to the permutor

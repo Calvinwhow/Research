@@ -18,6 +18,7 @@ Classes:
 import concurrent.futures
 import psutil
 import time
+import numpy as np
 
 
 class MemoryCheckingExecutor:
@@ -34,7 +35,7 @@ class MemoryCheckingExecutor:
     - memory_usage_over_limit(): Checks if the estimated memory usage is over the limit. 
 
     """
-    def __init__(self, max_workers, threshold_memory_gb, task_memory_gb):
+    def __init__(self, max_workers, task_memory_gb):
         """
         Initialize the MemoryCheckingExecutor.
 
@@ -45,7 +46,7 @@ class MemoryCheckingExecutor:
         - task_memory_gb: The estimated maximum memory usage of a single task in gigabytes. 
         """
         self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=max_workers)
-        self.threshold_memory_gb = threshold_memory_gb
+        self.threshold_memory_gb = int(np.round(self.threshold_memory_gb*.75))
         self.task_memory_gb = task_memory_gb
         self.current_tasks = 0
 
