@@ -47,6 +47,31 @@ class MemoryCheckingExecutor:
         self.task_memory_gb = task_memory_gb
         self.threshold_memory_gb = int(np.round(self.task_memory_gb*.75))
         self.current_tasks = 0
+        
+    def __enter__(self):
+        """
+        Enter the runtime context related to this object. The with statement will bind this method's return value
+        to the target(s) specified in the as clause of the statement, if any.
+
+        Returns:
+        - self: Returns the instance of the MemoryCheckingExecutor itself. 
+        """
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Exit the runtime context related to this object and performs any necessary cleanup.
+
+        Parameters:
+        - exc_type: The exception type, if an exception was raised in the context. None otherwise.
+        - exc_val: The exception instance, if an exception was raised in the context. None otherwise.
+        - exc_tb: A traceback object encoding the details of the call stack at the point where the exception was raised, if an exception was raised in the context. None otherwise.
+
+        Note:
+        - This method should not re-raise any exceptions that occur within it. It should return False to propagate exceptions, or True to suppress them.
+        """
+        self.executor.shutdown()
+        return False
 
     def submit(self, function, *args, **kwargs):
         """
