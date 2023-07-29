@@ -46,8 +46,8 @@ class MemoryCheckingExecutor:
         - task_memory_gb: The estimated maximum memory usage of a single task in gigabytes. 
         """
         self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=max_workers)
-        self.threshold_memory_gb = int(np.round(self.task_memory_gb*.75))
         self.task_memory_gb = task_memory_gb
+        self.threshold_memory_gb = int(np.round(self.task_memory_gb*.75))
         self.current_tasks = 0
 
     def submit(self, function, *args, **kwargs):
