@@ -79,26 +79,27 @@ class JobSubmitter:
     def __init__(self, server, job):
         self.server = server
         self.job = job
+        self.submitted = False
 
-    def submit_jobs(self, n_jobs):
+    def submit_jobs(self, print_job=True):
         try:
             ssh = paramiko.SSHClient()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             ssh.connect(self.server.server_name, username=self.server.username, password=self.server.password)
             
-            job_command = self.job.construct_command(n_jobs)
+            job_command = self.job.construct_command()
             stdin, stdout, stderr = ssh.exec_command(job_command)
-            
+            if print_job:
+                print("Job command: ", job_command)
             # Capture and print any output
             for line in stdout:
                 print(line.strip('\n'))
             
             ssh.close()
+            self.submitted = True
         except Exception as e:
             print(f"Failed to submit jobs due to error: {e}")
-            return False
-
-        return True
+        return 
 
 class LSFServer(Server):
     """
@@ -135,7 +136,6 @@ class LSFJob(Job):
         """
         Returns the job command specific to the LSF job scheduler.
         """
-        
         if self.n_jobs:  # If n_jobs is defined
             job_command = f"bsub -q {self.queue} -n {self.cpus} -R '{self.resource_req}' -M {self.mem_limit} -o {self.output_dir}/{self.job_name}_%I.txt -J '{self.job_name}[1-{self.n_jobs}]' -u {self.user_email} -B -N -cwd {self.work_dir} python {self.script_path} {self.options if self.options else ''}"
         else:  # If n_jobs is not defined
