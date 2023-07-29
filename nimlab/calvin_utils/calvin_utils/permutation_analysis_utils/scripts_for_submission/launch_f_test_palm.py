@@ -82,6 +82,7 @@ if __name__=='__main__':
             #----------------------------------------------------------------perform the permutation
             # Permute the patient labels
             permuted_patient_labels = permute_column(unpermuted_outcome_df.index.to_numpy(), looped_permutation=True).reshape(-1)
+            print(permuted_patient_labels)
             
             outcomes_df = unpermuted_outcome_df.copy()
             outcomes_df.index = permuted_patient_labels
