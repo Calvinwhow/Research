@@ -41,8 +41,6 @@ class MemoryCheckingExecutor:
 
         Parameters:
         - max_workers: The maximum number of tasks to execute concurrently.
-        - threshold_memory_gb: The maximum memory usage threshold in gigabytes. The executor will pause task submission
-          when this threshold is reached or exceeded.
         - task_memory_gb: The estimated maximum memory usage of a single task in gigabytes. 
         """
         self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=max_workers)
