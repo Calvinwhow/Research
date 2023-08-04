@@ -100,7 +100,8 @@ class JobSubmitter:
         except Exception as e:
             print(f"Failed to submit jobs due to error: {e}")
             self.submitted = False
-        return print('Job submitted successfully: ', self.submitted)
+        print('Job submitted successfully: ', self.submitted), 
+        return job_command
 
 class LSFServer(Server):
     """
@@ -133,19 +134,29 @@ class LSFJob(Job):
         self.resource_req = f"rusage[mem={self.mem_limit}] span[ptile={self.cpus}]" 
         self.n_jobs = n_jobs
         self.env_activate = environment_activation_string
-            
+
+    def format_command_options(self, options):
+        formatted = []
+        for key, value in options.items():
+            if isinstance(value, list):  # If value is list, format each element as string enclosed with escaped double quotes
+                formatted.append('--' + key + ' ' + str([f'"{item}"' for item in value]).replace("'", "\\\""))
+            else:
+                formatted.append('--' + key + ' "' + str(value) + '"')  # Else, simply enclose value with double quotes
+        return ' '.join(formatted)
+                
     def construct_command(self):
         """
         Returns the job command specific to the LSF job scheduler.
         """
         activation_string = f"source ~/.bashrc && {self.env_activate} && " if self.env_activate else ""
-
-        # Add quotation marks and escape sequences around each input path
-        self.options = ' '.join([f'\"{opt}\"' for opt in self.options.split() if opt.startswith('[') and opt.endswith(']')])
+        self.resource_request = f"-R '{self.resource_req}' " if self.resource_req else ""
+        self.memory_limit = f"-M {self.mem_limit}" if self.mem_limit else ""
+        formatted_options = self.format_command_options(self.options)
 
         if self.n_jobs:  # If n_jobs is defined
-            job_command = f"bsub -q {self.queue} -n {self.cpus} -R '{self.resource_req}' -M {self.mem_limit} -o {self.output_dir}/{self.job_name}_%I.txt -J '{self.job_name}[1-{self.n_jobs}]' -u {self.user_email} -B -N -cwd {self.work_dir} '{activation_string} python {self.script_path} {self.option}'"
+            job_command = f"bsub -q {self.queue} -n {self.cpus} {self.resource_request} {self.memory_limit} -o {self.output_dir}/{self.job_name}_%I.txt -J '{self.job_name}[1-{self.n_jobs}]' -u {self.user_email} -cwd {self.work_dir} '{activation_string} python {self.script_path} {formatted_options}'"
         else:  # If n_jobs is not defined
-            job_command = f"bsub -q {self.queue} -n {self.cpus} -R '{self.resource_req}' -M {self.mem_limit} -o {self.output_dir}/{self.job_name}.txt -J '{self.job_name}' -u {self.user_email} -B -N -cwd {self.work_dir} '{activation_string} python {self.script_path} {self.options}'"
+            job_command = f"bsub -q {self.queue} -n {self.cpus} {self.resource_request} {self.memory_limit} -o {self.output_dir}/{self.job_name}.txt -J '{self.job_name}' -u {self.user_email} -cwd {self.work_dir} '{activation_string} python {self.script_path} {formatted_options}'"
         return job_command
+
 

@@ -3,6 +3,7 @@ import numpy as np
 import nibabel as nib
 from scipy.ndimage import label
 from joblib import Parallel, delayed
+from sklearn.metrics import roc_curve, auc
 
 
 import numpy as np
@@ -305,8 +306,6 @@ class Linear_Reg_Diagnostic():
         y = formula(x)
         return x, y
     
-
-
 def model_diagnostics(optimal_model):
 
     """
@@ -351,3 +350,4 @@ def model_diagnostics(optimal_model):
     # Show plots
     plt.show()
     return fig 
+
