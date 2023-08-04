@@ -1,0 +1,260 @@
+'''
+1. **Ordinary Least Squares (OLS) and F-statistic Calculation Function**:
+
+   ```python
+   @jit(nopython=True)
+   def calculate_ols_and_f_stat(outcome_array, predictor_neuroimaging_arrays, predictor_clinical_arrays):
+       ...
+       return F_statistics
+   ```
+
+   - **Inputs**:
+     - `outcome_array`: The outcome variable array (e.g., patient outcomes).
+     - `predictor_neuroimaging_arrays`: A list of arrays containing neuroimaging predictor data.
+     - `predictor_clinical_arrays`: A list of arrays containing clinical predictor data.
+   - **Output**:
+     - `F_statistics`: An array containing F-statistic values for each voxel.
+   - **Description**: This function performs ordinary least squares regression on the input data, including the calculation of interaction terms, to compute F-statistic values for each voxel.
+
+2. **Load Data Function**:
+
+   ```python
+   def load_data(outcome_path, clinical_paths, neuroimaging_paths):
+       ...
+       return outcome_df, clinical_dfs, neuroimaging_dfs
+   ```
+
+   - **Inputs**:
+     - CSV file paths for the outcome, clinical, and neuroimaging data.
+   - **Output**:
+     - DataFrames containing the outcome, clinical, and neuroimaging data.
+   - **Description**: Reads the data from the specified CSV files.
+
+3. **Preprocess Data Function**:
+
+   ```python
+   def preprocess_data(outcome_df, clinical_dfs, neuroimaging_dfs):
+       ...
+       return outcome_array.values, predictor_neuroimaging_arrays, predictor_clinical_arrays
+   ```
+
+   - **Inputs**:
+     - DataFrames containing the outcome, clinical, and neuroimaging data.
+   - **Output**:
+     - Arrays containing standardized values of the outcome, clinical, and neuroimaging data.
+   - **Description**: Standardizes the data, centering and scaling the features.
+
+4. **One Permutation Function**:
+
+   ```python
+   def one_permutation(permutation_input):
+       ...
+       return F_statistics
+   ```
+
+   - **Input**:
+     - A tuple containing the outcome array and predictor arrays (neuroimaging and clinical).
+   - **Output**:
+     - F-statistic values for a single permutation.
+   - **Description**: Calls the `calculate_ols_and_f_stat` function to calculate F-statistic values for a single permutation.
+
+5. **Prepare Permutation Input Function**:
+
+   ```python
+   def prepare_permutation_input(outcome_array, predictor_neuroimaging_arrays, predictor_clinical_arrays):
+       ...
+       return permuted_outcome_array, predictor_neuroimaging_arrays, predictor_clinical_arrays
+   ```
+
+   - **Inputs**:
+     - Arrays containing the outcome, clinical, and neuroimaging data.
+   - **Output**:
+     - Permutated arrays for the outcome and predictor data.
+   - **Description**: Prepares the input for a permutation test by permuting the data according to the following exchangeability assumptions: 1) outcomes are exchangeable across patients, 2) whole-brain neuroimaging is exchangeable across patients, 3) clinical covariates are exchangeable across patients, 4) voxels are not exchangeable
+   Please note: this permutes outcomes, brains, and covariates--only permuting one or the other results in relation of the other predictors. 
+
+6. **Main Function**:
+
+   ```python
+   def main(outcome_path, clinical_paths, neuroimaging_paths, n_permutations, num_cores, output_path):
+       ...
+   ```
+
+   - **Inputs**:
+     - File paths, number of permutations, number of cores, and output path.
+   - **Description**: Orchestrates the entire permutation testing process.
+
+7. **Save Results Function**:
+
+   ```python
+   def save_results(results, output_path):
+       ...
+   ```
+
+   - **Inputs**:
+     - Results from all permutations and the output path.
+   - **Description**: Saves the permutation results to CSV files, avoiding overwriting.
+
+8. **Main Script Execution**:
+
+   ```python
+   if __name__ == '__main__':
+       ...
+   ```
+
+   - **Description**: Defines the file paths and parameters, then calls the `main` function.
+'''
+
+import numpy as np
+from tqdm import tqdm
+from numba import jit
+from concurrent.futures import ProcessPoolExecutor, as_completed
+import pandas as pd
+import os
+
+
+@jit(nopython=True)
+def calculate_ols_and_f_stat(outcome_array, predictor_neuroimaging_arrays, predictor_clinical_arrays):
+    n_patients, n_voxels = predictor_neuroimaging_arrays[0].shape
+
+    # Initialize arrays to store results
+    F_statistics = np.zeros(n_voxels)
+    
+    # Loop through each voxel (this loop can potentially be further vectorized)
+    for i in range(n_voxels):
+        # Create temporary arrays with corresponding voxel from all neuroimaging arrays and clinical data
+        X_no_interaction = np.ones((n_patients, 1))  # Intercept
+        X_interaction = np.ones((n_patients, 1))  # Intercept 
+        '''^--additional intercept will hold extra space in RAM. '''
+        
+        for neuroimaging_array in predictor_neuroimaging_arrays:
+            voxel_data = neuroimaging_array[:, i:i+1]
+            X_no_interaction = np.hstack((X_no_interaction, voxel_data))
+            X_interaction = np.hstack((X_interaction, voxel_data))
+
+        for clinical_array in predictor_clinical_arrays:
+            X_no_interaction = np.hstack((X_no_interaction, clinical_array))
+            X_interaction = np.hstack((X_interaction, clinical_array))
+            
+        # Add interaction terms for the full model
+        for idx1 in range(1, X_no_interaction.shape[1]):
+            for idx2 in range(idx1 + 1, X_no_interaction.shape[1]):
+                interaction_term = (X_no_interaction[:, idx1:idx1+1] * X_no_interaction[:, idx2:idx2+1])
+                X_interaction = np.hstack((X_interaction, interaction_term))
+                '''^---it is likely considerably faster to simply run intrx = X-interaction[:, neurocol]*X-interaction[:, covarcol]. 
+                However, it should be noted that this must be element-wise multiplication
+                instead of using a for loop, you can consider all permutations of covariates and neuroimaging dataframes.
+                THen you can multiply, the identified permutations and hstack them.'''
+
+        # Compute pseudoinverses
+        pinv_no_interaction = np.linalg.pinv(X_no_interaction)
+        pinv_interaction = np.linalg.pinv(X_interaction)
+        '''^---- is psuedoinverse the hat matrix?'''
+
+        # Compute coefficients
+        beta_no_interaction = pinv_no_interaction @ outcome_array
+        beta_interaction = pinv_interaction @ outcome_array
+        '''^--- assuming use of the hat matrix * outcome method to solve OLS, do we risk numerical decomposition?'''
+
+        # Compute residuals
+        residuals_no_interaction = outcome_array - X_no_interaction @ beta_no_interaction
+        residuals_interaction = outcome_array - X_interaction @ beta_interaction
+        '''^-- nicely done.'''
+
+        # Compute sum of squared residuals
+        ssr_no_interaction = np.sum(residuals_no_interaction**2)
+        ssr_interaction = np.sum(residuals_interaction**2)
+
+        # Compute F-statistic
+        df_no_interaction = n_patients - X_no_interaction.shape[1]
+        df_interaction = n_patients - X_interaction.shape[1]
+        F_statistic = ((ssr_no_interaction - ssr_interaction) / (df_no_interaction - df_interaction)) / (ssr_interaction / df_interaction)
+        F_statistic = max(F_statistic, 0)
+        '''^--- why use max()? There should only be 1 value for the f-statistic. As well, we need to realize manual calculation
+        can result in negative f-statistic values if the reduced model is considerably better. This is not conventional, and thus we must set
+        all negative values to zero.'''
+
+        # Store F-statistic
+        F_statistics[i] = F_statistic
+        ''''^---good.'''
+
+    return F_statistics
+
+def load_data(outcome_path, clinical_paths, neuroimaging_paths):
+    """Load data from CSV files."""
+    outcome_df = pd.read_csv(outcome_path)
+    clinical_dfs = [pd.read_csv(path) for path in clinical_paths]
+    neuroimaging_dfs = [pd.read_csv(path) for path in neuroimaging_paths]
+    return outcome_df, clinical_dfs, neuroimaging_dfs
+
+def preprocess_data(outcome_df, clinical_dfs, neuroimaging_dfs):
+    """Standardize and prepare data for analysis."""
+    outcome_array = (outcome_df['outcome'] - outcome_df['outcome'].mean()) / outcome_df['outcome'].std()
+    
+    predictor_neuroimaging_arrays = [(df - df.mean(axis=1).values[:, np.newaxis]) / df.std(axis=1).values[:, np.newaxis] for df in neuroimaging_dfs]
+    predictor_clinical_arrays = [(df - df.mean()) / df.std() for df in clinical_dfs]
+
+    return outcome_array.values, predictor_neuroimaging_arrays, predictor_clinical_arrays
+
+
+def one_permutation(permutation_input):
+    """Perform one permutation, including F-stat calculation."""
+    # Unpack the input
+    outcome_array, predictor_neuroimaging_arrays, predictor_clinical_arrays = permutation_input
+    # Call the function to calculate OLS and F-stat
+    F_statistics = calculate_ols_and_f_stat(outcome_array, predictor_neuroimaging_arrays, predictor_clinical_arrays)
+    return F_statistics
+
+def prepare_permutation_input(outcome_array, predictor_neuroimaging_arrays, predictor_clinical_arrays):
+    # Shuffle the outcome or predictor variables according to the null hypothesis
+    # For example, you might want to shuffle the outcome array while keeping the predictors the same
+    
+    '''
+    Can speed this code up by projecting vectorized processes to the 'index' of the array, using array [:, 0].
+    this assumes all patient IDs are in the first column. 
+    '''
+    permuted_outcome_array = outcome_array[np.random.permutation(len(outcome_array))]
+    permuted_predictor_neuroimaging_arrays = [arr[np.random.permutation(len(outcome_array))] for arr in predictor_neuroimaging_arrays]
+    permuted_predictor_clinical_arrays = [arr[np.random.permutation(len(outcome_array))] for arr in predictor_clinical_arrays]
+
+    # Return the permuted data as the input for the permutation test
+    return permuted_outcome_array, permuted_predictor_neuroimaging_arrays, permuted_predictor_clinical_arrays
+
+
+def main(outcome_path, clinical_paths, neuroimaging_paths, n_permutations, num_cores, output_path):
+    """Main function to perform permutation tests."""
+    outcome_df, clinical_dfs, neuroimaging_dfs = load_data(outcome_path, clinical_paths, neuroimaging_paths)
+    outcome_array, predictor_neuroimaging_arrays, predictor_clinical_arrays = preprocess_data(outcome_df, clinical_dfs, neuroimaging_dfs)
+    
+    all_permutation_inputs = [prepare_permutation_input(outcome_array, predictor_neuroimaging_arrays, predictor_clinical_arrays) for _ in range(n_permutations)]
+
+    with ProcessPoolExecutor(max_workers=num_cores) as executor:
+        futures = [executor.submit(one_permutation, permutation_input) for permutation_input in all_permutation_inputs]
+        results = [future.result() for future in tqdm(as_completed(futures), total=n_permutations, desc="Permutations")]
+    save_results(results, output_path)
+
+def save_results(results, output_path):
+    """Save the permutation results to files or a large matrix."""
+    i = 0
+    for result in results:
+        file_path = f"{output_path}_result_values_{i}.csv"
+        while os.path.exists(file_path):
+            i += 1
+            file_path = f"{output_path}_result_values_{i}.csv"
+        pd.DataFrame(result).to_csv(file_path, index=False)
+        '''^--- is there a more efficient way to save other than CSV? Is there a more efficient manner of incrementation other than while loops?
+        for example, there will come a time when i=9000, which results in significant slowing. Thus, the program slows as progress continues.
+        We should avoid this concern.'''
+
+if __name__ == '__main__':
+    output_path = "/Users/cu135/Library/CloudStorage/OneDrive-Personal/OneDrive_Documents/Work/Software/Research/nimlab/calvin_utils/calvin_utils/experimental/testing_outcomes"
+    outcome_path = "/Users/cu135/Dropbox (Partners HealthCare)/resources/datasets/BIDS_AD_DBS_FORNIX/response_topology/f_test/inputs/outcome_data_1.csv"
+    clinical_paths = ["/Users/cu135/Dropbox (Partners HealthCare)/resources/datasets/BIDS_AD_DBS_FORNIX/response_topology/f_test/inputs/covariate_data_1.csv"]
+    neuroimaging_paths = ["/Users/cu135/Dropbox (Partners HealthCare)/resources/datasets/BIDS_AD_DBS_FORNIX/response_topology/f_test/inputs/voxelwise_data_1.csv"]
+    n_permutations = 2
+    num_cores = 4
+    main(outcome_path, clinical_paths, neuroimaging_paths, n_permutations, num_cores, output_path)
+
+# Call the function
+# F_statistics = calculate_ols_and_f_stat(outcome_array, predictor_neuroimaging_arrays, predictor_clinical_arrays)
+# F_statistics[:5]  # Print first 5 F-statistics
