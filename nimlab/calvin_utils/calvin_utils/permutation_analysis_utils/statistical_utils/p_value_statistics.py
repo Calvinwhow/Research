@@ -236,36 +236,6 @@ class PermutationPValueCalculator:
 
         return self.observed_distribution, uncorrected_p_values
     
-    def extract_without_multiprocess(self, directory, basename):
-        """
-        Extract the maximum value from each CSV file in the specified directory with the given basename.
-
-        Parameters:
-        - directory (str): The path to the directory containing the CSV files.
-        - basename (str): The basename for the CSV files to be processed.
-
-        Returns:
-        - List of maximum values from each CSV file.
-        """
-        # Construct the search pattern
-        search_pattern = f"{directory}/{basename}*.csv"
-
-        # List all CSV files in the directory with the provided basename
-        csv_files = glob.glob(search_pattern)
-
-        max_values = []
-
-        # For each CSV file, read and extract the maximum value
-        for csv_file in tqdm(csv_files):
-            # Use header=0 as the CSV has a header
-            data = pd.read_csv(csv_file, header=0)
-
-            # Extract the maximum value, considering only numerical values
-            max_value = np.max(data)
-            max_values.append(max_value)
-
-        return max_values
-    
     def load_nifti_data(self, nifti_path):
         """
         Load the data from a NIfTI file.
@@ -281,23 +251,6 @@ class PermutationPValueCalculator:
         nifti_img = nib.load(nifti_path)
         data = nifti_img.get_fdata()
         return data
-
-    def threshold_nifti_data(self, nifti_data, threshold):
-        """
-        Threshold the NIfTI data such that only values over the given threshold are nonzero.
-
-        Parameters:
-        - nifti_data : np.ndarray
-            The data extracted from a NIfTI file.
-        - threshold : float
-            The value to use for thresholding.
-
-        Returns:
-        - thresholded_data : np.ndarray
-            The thresholded NIfTI data with values below the threshold set to np.NaN.
-        """
-        thresholded_data = np.where(nifti_data > threshold, nifti_data, np.NaN)
-        return thresholded_data
 
     def calculate_p_values_nifti(self, thresholded_nifti_data, maxima_array):
         """
@@ -327,50 +280,79 @@ class PermutationPValueCalculator:
         p_values_nifti = nib.Nifti1Image(p_values_data, np.eye(4))
         return p_values_nifti
 
-    def fwe_calculate(self, nifti_path=None, use_nifti=False, multiprocess=True):
+    def extract_without_multiprocess(self, directory, basename):
         """
-        Encapsulates the entire calculation flow.
-
+        Extract the maximum value from each CSV file in the specified directory with the given basename.
+        
         Parameters:
-        - nifti_path : str, optional
-            Path to the NIfTI file. Required if use_nifti is True.
-        - use_nifti : bool, optional
-            If True, use NIfTI-based workflow. Otherwise, use DataFrame-based workflow.
-        - multiprocess : bool, optional
-            If True, use parallel processing for maxima extraction. Otherwise, use single-threaded extraction.
-
+        - directory (str): The path to the directory containing the CSV files.
+        - basename (str): The basename for the CSV files to be processed.
+        
         Returns:
-        - thresholded_data : pandas.DataFrame or nibabel.Nifti1Image
-            The thresholded observed distribution or NIfTI image.
-        - p_values : pandas.DataFrame or nibabel.Nifti1Image
-            A dataframe or NIfTI image containing the p-values.
+        - List of maximum values from each CSV file.
         """
-        # Extract maxima based on multiprocess flag
+        search_pattern = f"{directory}/{basename}*.csv"
+        csv_files = glob.glob(search_pattern)
+        max_values = []
+
+        for csv_file in tqdm(csv_files):
+            data = pd.read_csv(csv_file, header=0)
+            max_value = np.max(data)
+            max_values.append(max_value)
+        
+        return np.array(max_values)
+
+    def threshold_nifti_data(self, nifti_data, threshold):
+        """
+        Threshold the provided NIfTI data based on the given threshold value.
+        All values below the threshold are set to NaN.
+        
+        Parameters:
+        - nifti_data (np.ndarray): The 3D numpy array representing the NIfTI data.
+        - threshold (float): The threshold value.
+        
+        Returns:
+        - np.ndarray: The thresholded NIfTI data.
+        """
+        thresholded_data = nifti_data.copy()
+        thresholded_data[thresholded_data < threshold] = np.NaN
+        return thresholded_data
+
+    def fwe_calculate(self, directory=None, basename=None, nifti_path=None, use_nifti=False, multiprocess=True):
+        # Extract maxima
         if multiprocess:
             maxima_array = self.extract_maxima()
         else:
-            maxima_array = self.extract_without_multiprocess(self.directory, self.basename)
-
+            maxima_array = self.extract_without_multiprocess(directory, basename)
+        
         # Calculate 95th percentile
         percentile_95 = self.calculate_percentile(maxima_array)
 
         if use_nifti:
-            # Ensure a NIfTI path is provided
-            if not nifti_path:
-                raise ValueError("A NIfTI path must be provided when using the NIfTI-based workflow.")
-
-            # Load NIfTI data and threshold it
-            nifti_data = self.load_nifti_data(nifti_path)
+            # Load the NIfTI file and extract its data and affine
+            nifti_img = nib.load(nifti_path)
+            nifti_data = nifti_img.get_fdata()
+            
+            # Threshold the NIfTI data based on the 95th percentile
             thresholded_data = self.threshold_nifti_data(nifti_data, percentile_95)
-
-            # Calculate p-values for NIfTI data
-            p_values = self.calculate_p_values_nifti(thresholded_data, maxima_array)
-
+            
+            # Calculate voxelwise p-values for the NIfTI data
+            p_values_data = self.calculate_p_values_nifti(thresholded_data, maxima_array)
+            p_values_nifti = nib.Nifti1Image(p_values_data, nifti_img.affine)
+            
+            return thresholded_data, p_values_nifti
+        
         else:
             # Threshold the observed distribution
             thresholded_data = self.threshold_distribution(self.observed_distribution, percentile_95)
-
+            
             # Calculate p-values
             p_values = self.calculate_p_values(thresholded_data, maxima_array)
-
-        return thresholded_data, p_values
+            
+            return thresholded_data, p_values
+    
+    
+    
+    
+    
+    
