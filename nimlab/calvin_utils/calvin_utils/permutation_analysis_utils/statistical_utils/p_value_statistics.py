@@ -36,7 +36,7 @@ import pandas as pd
 from joblib import Parallel, delayed
 from tqdm import tqdm
 import nibabel as nib
-from glob import glob
+import glob
 
 class PermutationPValueCalculator:
     """
