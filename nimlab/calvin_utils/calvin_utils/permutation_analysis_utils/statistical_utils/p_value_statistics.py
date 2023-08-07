@@ -36,8 +36,7 @@ import pandas as pd
 from joblib import Parallel, delayed
 from tqdm import tqdm
 import nibabel as nib
-import glob
-
+from glob import glob 
 class PermutationPValueCalculator:
     """
     A class used to calculate p-values and thresholded distributions from observed 
@@ -292,7 +291,7 @@ class PermutationPValueCalculator:
         - List of maximum values from each CSV file.
         """
         search_pattern = f"{directory}/{basename}*.csv"
-        csv_files = glob.glob(search_pattern)
+        csv_files = glob(search_pattern)
         max_values = []
 
         for csv_file in tqdm(csv_files):
