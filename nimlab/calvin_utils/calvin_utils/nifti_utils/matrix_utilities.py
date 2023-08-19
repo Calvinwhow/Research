@@ -2,8 +2,32 @@ import scipy.stats as st
 import numpy as np
 from nibabel.affines import apply_affine
 from nimlab import datasets as nimds
-from nilearn import image
+from nilearn import image, plotting 
 
+def import_nifti_to_numpy_array(filepath):
+    '''
+    Does what it says. Just provide the absolute filepath.
+    Args:
+        filepath: absolute path to the file to import
+    Returns:
+        nifti_data: nifti_data as a numpy array
+    '''
+    try:
+        # Load the NIfTI image using nilearn
+        nifti_img = image.load_img(filepath)
+
+        # Convert the NIfTI image to a NumPy array
+        nifti_data = nifti_img.get_fdata()
+
+        # Return the NIfTI image
+        return nifti_data
+    except Exception as e:
+        print("Error:", e)
+        return None
+    
+def view_nifti_html(img):
+    html_image = plotting.view_img(img, cut_coords=(0,0,0), black_bg=False, opacity=.75, cmap='ocean_hot')
+    return html_image
 
 def threshold_matrix(matrix, threshold=0.5, probability=True, direction='bidirectional'):
     print('--------------------------------Performing threshold--------------------------------')

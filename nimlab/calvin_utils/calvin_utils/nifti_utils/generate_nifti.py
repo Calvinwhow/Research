@@ -8,6 +8,8 @@ from glob import glob
 from calvin_utils.file_utils.import_matrices import import_matrices_from_folder
 from nltools.mask import create_sphere
 
+from nilearn import image
+
 def nifti_from_matrix(matrix, output_file, ref_file=r'/Users/cu135/Dropbox (Partners HealthCare)/memory/functional_networks/published_composite_networks/0Fx-DBS-Network_N46.nii', use_reference=True, reference='MNI', use_affine=False, affine='MNI', output_name=None):
     """Converts a flattened matrix to a NIfTI file using the given affine matrix.
 

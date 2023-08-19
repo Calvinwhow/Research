@@ -21,7 +21,7 @@ def import_matrices_from_df_series(df_series):
             continue
         img = image.load_img(file_path)
         #Organize files into manipulatable dataframes
-        data = img.get_fdata(); data = np.nan_to_num(data, nan=0, posinf=0, neginf=0)
+        data = img.get_fdata()
         
         name = index
         matrix_df[name] = data.flatten()
@@ -65,7 +65,7 @@ def import_matrices_from_csv(csv_path: str) -> pd.DataFrame:
         # print('I found : ', file)
         img = image.load_img(file_path)
         #Organize files into manipulatable dataframes
-        data = img.get_fdata(); data = np.nan_to_num(data, nan=0, posinf=0, neginf=0)
+        data = img.get_fdata()
         
         name = os.path.basename(file_path).split('_tome')[0]
         try:
@@ -81,8 +81,8 @@ def import_matrices_from_csv(csv_path: str) -> pd.DataFrame:
         names.append(name)
     return matrix_df
 
-def import_matrices_from_folder(connectivity_path, file_pattern='/*/*/*t_conn*.nii.gz'):
-    glob_path  = connectivity_path + file_pattern
+def import_matrices_from_folder(connectivity_path, file_pattern='', convert_nan_to_num=None):
+    glob_path  = os.path.join(connectivity_path, file_pattern)
     print('I will search: ', glob_path)
 
     globbed = glob(glob_path)
@@ -93,17 +93,12 @@ def import_matrices_from_folder(connectivity_path, file_pattern='/*/*/*t_conn*.n
         # print('I found : ', file)
         img = image.load_img(file)
         #Organize files into manipulatable dataframes
-        data = img.get_fdata(); data = np.nan_to_num(data, nan=0, posinf=0, neginf=0)
-        
-        name = os.path.basename(file).split('_tome')[0]
-        try:
-            name = name.split('sub-')[1]
-            name = name.split('uvat')[0]
-        except:
-            print('cannot further split name')
-        if name == 'generated_nifti.nii':
-            dirs = file.split('/')
-            name = os.path.join(dirs[-3], dirs[-2], name)
+        data = img.get_fdata()
+        if convert_nan_to_num is not None:
+            data = np.nan_to_num(data, nan=convert_nan_to_num['nan'], posinf=convert_nan_to_num['posinf'], neginf=convert_nan_to_num['neginf'])
+        else:
+            pass
+        name = os.path.basename(file)
         matrix_df[name] = data.flatten()
         names.append(name)
     return matrix_df

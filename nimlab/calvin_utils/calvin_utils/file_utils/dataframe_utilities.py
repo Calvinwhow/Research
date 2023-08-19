@@ -93,3 +93,43 @@ def preprocess_colnames_for_regression(data_df):
     data_df = add_prefix_to_numeric_cols(data_df)
     data_df = replace_hyphens(data_df)
     return data_df
+
+def extract_and_rename_subject_id(dataframe, split_command_dict):
+    """
+    Renames the columns of a dataframe based on specified split commands.
+
+    Parameters:
+    - dataframe (pd.DataFrame): The dataframe whose columns need to be renamed.
+    - split_command_dict (dict): A dictionary where the key is the split string 
+                                 and the value is the order to take after splitting 
+                                 (0 for before the split, 1 for after the split, etc.).
+
+    Returns:
+    - pd.DataFrame: Dataframe with renamed columns.
+
+    Example:
+    >>> data = {'subject_001': [1, 2, 3], 'patient_002': [4, 5, 6], 'control_003': [7, 8, 9]}
+    >>> df = pd.DataFrame(data)
+    >>> split_commands = {'_': 1}
+    >>> new_df = extract_and_rename_subject_id(df, split_commands)
+    >>> print(new_df.columns)
+    Index(['001', '002', '003'], dtype='object')
+    """
+
+    raw_names = dataframe.columns
+    name_mapping = {}
+
+    # For each column name in the dataframe
+    for name in raw_names:
+        new_name = name  # Default to the original name in case it doesn't match any split command
+
+        # Check each split command to see if it applies to this column name
+        for k, v in split_command_dict.items():
+            if k in new_name:
+                new_name = new_name.split(k)[v]
+
+        # Add the original and new name to the mapping
+        name_mapping[name] = new_name
+
+    # Rename columns in the dataframe based on the mapping
+    return dataframe.rename(columns=name_mapping)
