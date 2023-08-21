@@ -323,7 +323,8 @@ def unmask_matrix(df_1, mask_path=None, mask_threshold=0.2, unmask_by='rows', da
     output: unmasked dataframe
     This function inserts values back into their original locations in a full brain mask.
     '''
-
+    if isinstance(df_1, list):
+        df_1 = pd.DataFrame(df_1)
     # Custom Unmask
     if dataframe_to_unmask_by is not None:
         mask = dataframe_to_unmask_by.transpose().reset_index(drop=True).copy()

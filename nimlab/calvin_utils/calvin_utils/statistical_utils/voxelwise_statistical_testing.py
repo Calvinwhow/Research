@@ -14,6 +14,9 @@ import pandas as pd
 import nibabel as nib
 from nimlab import datasets as nimds
 
+from calvin_utils.nifti_utils.matrix_utilities import unmask_matrix, mask_matrix
+
+
 def generate_interaction_features(df):
     """Generate interaction features between every column in a dataframe and appends them to a new column"""
     new_df = pd.DataFrame()
@@ -459,12 +462,11 @@ def generate_r_map(matrix_df, mask_path=None):
     p_map_df
     r_squared_map_df
     '''
-    
     #Mask the dataframe to save on computational time
     #Isolate the clinical variables
     outcomes_df = matrix_df.iloc[:,0]
     #Isolate voxels of interest
-    matrix_df = mask_matrix(matrix_df, mask_path=mask_path, voxels_in_rows_or_columns='columns')
+    matrix_df = mask_matrix(matrix_df, mask_path=mask_path, mask_by='columns')
 
     r_list = []
     p_list = []
@@ -474,8 +476,8 @@ def generate_r_map(matrix_df, mask_path=None):
         p_list.append(p)
         
     #Unmask the dataframe 
-    r_map_df = pd.DataFrame(unmask_array(r_list, mask_path=mask_path))
-    p_map_df = pd.DataFrame(unmask_array(p_list, mask_path=mask_path))
+    r_map_df = pd.DataFrame(unmask_matrix(r_list, mask_path=mask_path))
+    p_map_df = pd.DataFrame(unmask_matrix(p_list, mask_path=mask_path))
     r_squared_map_df = np.square(r_map_df)
     return r_map_df, p_map_df, r_squared_map_df
             

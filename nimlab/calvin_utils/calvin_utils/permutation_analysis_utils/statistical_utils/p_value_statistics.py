@@ -351,7 +351,159 @@ class PermutationPValueCalculator:
             return thresholded_data, p_values
     
     
+class VarianceSmoothedPValueCalculator(PermutationPValueCalculator):
+    """
+    A class used to calculate variance-smoothed maximum-statistic FWE adjusted p-values.
+    It inherits from the PermutationPValueCalculator class.
     
+    Theory:
+    -------
+    The variance-smoothed maximum statistic method introduces a balance between the raw 
+    variances of the test statistics and the average variance across all test statistics.
+    The purpose is to stabilize variance estimates, especially in cases where the number of 
+    tests or comparisons is large, potentially leading to unstable variance estimates for 
+    individual tests.
     
+    Mathematics:
+    ------------
+    For each test statistic (or voxel in imaging data), the variance is smoothed as:
     
+    smoothed_variance_i = (1 - λ) * variance_i + λ * mean_variance
     
+    where:
+    - variance_i is the raw variance of the i-th test statistic.
+    - mean_variance is the average variance across all test statistics.
+    - λ (lambda) is a smoothing parameter between 0 and 1. A value of 0.5 indicates equal 
+      weighting between the raw variance and the average variance.
+      
+    The test statistics are then standardized using the smoothed variances:
+    
+    standardized_statistic_i = test_statistic_i / sqrt(smoothed_variance_i)
+    
+    The maximum statistic method is applied on these standardized statistics for FWE correction.
+    ------------
+    
+    The variance-smoothing procedure involves the following steps:
+    1. For each voxel, the variance across the permuted distributions is calculated.
+    2. A weighted average of the individual voxel variances and the average variance across all voxels is computed.
+    3. This weighted variance is then used to standardize the data, i.e., divide each voxel value by the square root of its smoothed variance.
+    4. The maxima of the smoothed permuted distributions are then identified.
+    5. For each voxel in the smoothed observed distribution, its percentile in the smoothed permuted distribution is calculated.
+    6. The p-value for each voxel is then determined as (1 - percentile).
+    
+    The method relies on the concept that smoothing the variance provides more robustness in FWE correction 
+    by reducing the influence of outlier variances.
+    
+    Attributes
+    ----------
+    lambda_value : float
+        A value between 0 and 1 that determines the degree of smoothing. A lambda value of 0 means no smoothing, 
+        while a value of 1 means full smoothing towards the average variance across voxels.
+
+    Methods
+    -------
+    variance_smooth_data(distribution)
+        Applies variance smoothing and standardization to the provided distribution.
+    
+    calculate_smoothed_percentile(value, smoothed_distribution)
+        Calculates the percentile of the given value in the smoothed distribution.
+    
+    run()
+        Performs variance-smoothed FWE correction on the observed distribution using permuted distributions.
+    """
+
+    def __init__(self, observed_distribution, input_files, lambda_value=0.5):
+        """
+        Constructs all the necessary attributes for the VarianceSmoothedPValueCalculator object.
+        
+        Parameters
+        ----------
+        observed_distribution : pandas.DataFrame
+            A dataframe representing the observed distribution.
+        input_files : list
+            A list of paths to files that represent the permuted results.
+        lambda_value : float, optional
+            The lambda value for variance smoothing (default is 0.5).
+        """
+        super().__init__(observed_distribution, input_files)
+        self.lambda_value = lambda_value
+
+    def variance_smooth_data(self, distribution):
+        """
+        Apply variance smoothing and standardization to the provided distribution.
+        
+        Parameters
+        ----------
+        distribution : pandas.DataFrame
+            The distribution to be smoothed.
+        
+        Returns
+        -------
+        pandas.DataFrame
+            The variance-smoothed and standardized distribution.
+        """
+        individual_variances = distribution.var()
+        avg_variance = individual_variances.mean()
+        smoothed_variances = (1 - self.lambda_value) * individual_variances + self.lambda_value * avg_variance
+        standardized_data = distribution / np.sqrt(smoothed_variances)
+        return standardized_data
+
+    def calculate_smoothed_percentile(self, value, smoothed_distribution):
+        """
+        Calculate the percentile of the given value in the smoothed distribution.
+        
+        Parameters
+        ----------
+        value : float
+            The value for which the percentile needs to be determined.
+        smoothed_distribution : pandas.Series
+            The smoothed distribution against which the percentile is calculated.
+        
+        Returns
+        -------
+        float
+            The calculated percentile.
+        """
+        return (smoothed_distribution < value).mean()
+
+    def _extract_values_from_file(self, file):
+        """
+        Helper function to extract all values from the given file using numpy for efficiency.
+        If numpy fails, will use Pandas.
+        """
+        try:
+            values = np.genfromtxt(file, delimiter=',').flatten()
+        except:
+            df = pd.read_csv(file)
+            values = df.values.flatten()
+        return values
+
+    def run(self):
+        """
+        Perform variance-smoothed FWE correction on the observed distribution using permuted distributions.
+        
+        The process involves:
+        1. Extracting the permuted distribution values from the input files.
+        2. Applying variance-smoothing to the permuted distributions.
+        3. Identifying the maxima of the smoothed permuted distributions.
+        4. Smoothing the observed distribution.
+        5. For each voxel in the smoothed observed distribution, calculating its percentile in the smoothed 
+           permuted distribution maxima.
+        6. Computing p-values for each voxel as (1 - percentile).
+        
+        Returns
+        -------
+        pandas.DataFrame
+            A DataFrame with p-values for each voxel.
+        """
+        # Step 1: Extract the permuted distribution from a group of files
+        permuted_distributions = [self._extract_values_from_file(file) for file in self.input_files]
+        
+        # Convert list of arrays to a DataFrame
+        permuted_df = pd.DataFrame(np.array(permuted_distributions).T)
+
+        # Step 2: Variance-smooth the permuted distribution
+        smoothed_permuted_distributions = self.variance_smooth_data(permuted_df)
+
+        # Step 3: Identify the maxima of the smoothed permuted distributions
+        smoothed_maxima = smoothed_permuted_d
