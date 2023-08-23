@@ -29,44 +29,60 @@ def view_nifti_html(img):
     html_image = plotting.view_img(img, cut_coords=(0,0,0), black_bg=False, opacity=.75, cmap='ocean_hot')
     return html_image
 
-def threshold_matrix(matrix, threshold=0.5, probability=True, direction='bidirectional'):
-    print('--------------------------------Performing threshold--------------------------------')
-    if probability == True:
-        high_threshold = st.norm.ppf(threshold) #this generates the z score that indicates everything BELOW the threshold value
-        low_threshold = st.norm.ppf(1-threshold) #this generates th
-        print('z score high threshold is: ', high_threshold)
-        print('z score low threshold is: ', low_threshold)
+def threshold_matrix(matrix, threshold=0.95, method='raw', direction='keep_above', output='zero', mask_mode=False):
+    """
+    Thresholds the matrix based on the provided criteria.
     
+    Parameters:
+        - matrix (np.array): The input matrix.
+        - threshold (float or tuple): The threshold value(s). If tuple, interpreted as range.
+        - method (str): How to determine the threshold. 'raw', 'probability', or 'percentile'.
+        - direction (str): 'keep_above', 'keep_below', 'keep_between', or 'exclude_between' (if threshold is a tuple).
+        - output (str): What to set the thresholded values to. 'zero' or 'nan'.
+        - mask_mode (bool): If True, sets all non-masked values to 1.
+    
+    Returns:
+        - np.array: Thresholded matrix.
+    """
+    print('--------------------------------Performing threshold--------------------------------')
+    
+    # Based on method, set the threshold value
+    if isinstance(threshold, tuple):
+        if method == 'probability':
+            lower_threshold = st.norm.ppf(threshold[0])
+            upper_threshold = st.norm.ppf(threshold[1])
+        elif method == 'percentile':
+            lower_threshold = np.percentile(matrix, threshold[0])
+            upper_threshold = np.percentile(matrix, threshold[1])
+        else:  # raw
+            lower_threshold, upper_threshold = threshold
     else:
-        high_threshold = threshold
-        low_threshold = -threshold
-    if direction == 'keep_greater':
-        print('pre threshold: ', np.count_nonzero(matrix))
-        print('max z score in matrix is: ', np.max(matrix))
-        print('min z score in matrix is: ', np.min(matrix))
-        empty = np.ones(matrix.shape)
-        empty[matrix < high_threshold] = 0
-        matrix = matrix * empty
-        print('post threshold: ', np.count_nonzero(matrix))
-        print('max z score in matrix is: ', np.max(matrix))
-        print('min z score in matrix is: ', np.min(matrix))
-        print('I zero everything below threshold')
-    elif direction == 'keep_lesser':
-        matrix[matrix > low_threshold] = 0
-        print('I will zero everything above threshold')
-    elif direction == 'bidirectional':
-        print('I will keep everything above and below the threshold')
-        matrix[matrix > high_threshold] = 1; vox_over = np.sum(matrix==1)
-        print('voxels over threshold: ', vox_over)
-        matrix[matrix < low_threshold] = -1; vox_under = np.sum(matrix==-1)
-        print('voxels under and over threshold: ', vox_under)
-        matrix = np.where(abs(matrix) == 1, matrix, 0)
-        print('max z score in matrix is: ', np.max(matrix))
-        print('min z score in matrix is: ', np.min(matrix))
-        print('voxels suerviving matrix: ', np.count_nonzero(matrix))
-    else:
-        print('Error encountered, direction not provided')
+        if method == 'probability':
+            threshold_value = st.norm.ppf(threshold)
+        elif method == 'percentile':
+            threshold_value = np.percentile(matrix, threshold)
+        else:  # raw
+            threshold_value = threshold
+    
+    # Apply thresholding
+    if direction == 'keep_above':
+        matrix = np.where(matrix < threshold_value, output_value(output), matrix)
+    elif direction == 'keep_below':
+        matrix = np.where(matrix > threshold_value, output_value(output), matrix)
+    elif direction == 'keep_between' and isinstance(threshold, tuple):
+        matrix = np.where((matrix < lower_threshold) | (matrix > upper_threshold), output_value(output), matrix)
+    elif direction == 'exclude_between' and isinstance(threshold, tuple):
+        matrix = np.where((matrix >= lower_threshold) & (matrix <= upper_threshold), output_value(output), matrix)
+    
+    # Apply mask mode if enabled
+    if mask_mode:
+        matrix = np.where((matrix != output_value(output)) & (~np.isnan(matrix)), 1, matrix)
+    
     return matrix
+
+def output_value(output_type):
+    """Helper function to determine the output value based on the type."""
+    return 0 if output_type == 'zero' else np.nan
 
 def convert_index_to_coordinate(index, coordinate_affine_matrix):
     '''
