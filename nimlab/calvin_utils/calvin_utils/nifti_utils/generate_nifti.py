@@ -6,11 +6,10 @@ warnings.filterwarnings('ignore')
 import pandas as pd
 from glob import glob
 from calvin_utils.file_utils.import_matrices import import_matrices_from_folder
-from nltools.mask import create_sphere
 
 from nilearn import image
 
-def nifti_from_matrix(matrix, output_file, ref_file=r'/Users/cu135/Dropbox (Partners HealthCare)/memory/functional_networks/published_composite_networks/0Fx-DBS-Network_N46.nii', use_reference=True, reference='MNI', use_affine=False, affine='MNI', output_name=None):
+def nifti_from_matrix(matrix, output_file, ref_file=None, use_reference=True, reference='MNI', use_affine=False, affine='MNI', output_name=None):
     """Converts a flattened matrix to a NIfTI file using the given affine matrix.
 
     Args:
@@ -38,10 +37,13 @@ def nifti_from_matrix(matrix, output_file, ref_file=r'/Users/cu135/Dropbox (Part
     elif use_reference:
         if reference == 'MNI':
             mask = nimds.get_img("mni_icbm152")
-            ref_img = image.load_img(ref_file).get_fdata()
-            print(ref_img.shape)
-            print(matrix.shape)
+            ref_img = mask.get_fdata()
             matrix = matrix.reshape(ref_img.shape)
+        else:
+            ref_img = image.load_img(ref_file)
+            ref_img_data = ref_img.get_fdata()
+            mask = np.where(ref_img > 0, 1, 0) #Quick-and-dirty mask-generation assuming T1 image. 
+            matrix = matrix.reshape(ref_img_data.shape)
         # Create a new image from the array and the affine matrix
         img = image.new_img_like(ref_niimg=mask, data=matrix)
 
@@ -107,6 +109,7 @@ def generate_concentric_spherical_roi(subject, x, y, z, out_dir, max_radius=12):
 
 def generate_eccentric_spherical_roi(subject, x, y, z, out_dir, radius=5, eccentricity=(1,1,1)):
     # Create a sphere with the given coordinates and radius
+    from nltools.mask import create_sphere
     sphere_mask = create_sphere([x, y, z], radius=radius)
 
     # Alter the shape of the sphere to create an eccentric sphere
@@ -179,6 +182,7 @@ def generate_spherical_roi(x, y, z, out_dir=rf'/Users/cu135/Dropbox (Partners He
 
 def gen_sphere_roi(xcoord, ycoord, zcoord, mask=False, thresh_mx=None, radius=5):
     #Prepare matrices for masking
+    from nltools.mask import create_sphere
     sphere_mask = create_sphere([xcoord, ycoord, zcoord], radius=radius)
     sphere_mask = sphere_mask.get_fdata()
     print(np.count_nonzero(sphere_mask))
