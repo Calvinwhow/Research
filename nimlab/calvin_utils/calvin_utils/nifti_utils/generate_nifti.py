@@ -6,7 +6,14 @@ warnings.filterwarnings('ignore')
 import pandas as pd
 from glob import glob
 from calvin_utils.file_utils.import_matrices import import_matrices_from_folder
-
+from nimlab import datasets as nimds
+import numpy as np
+from nilearn import image, plotting
+import nibabel as nib
+import os
+import pandas as pd
+import nibabel as nib
+from nilearn.image import resample_to_img
 from nilearn import image
 
 def nifti_from_matrix(matrix, output_file, ref_file=None, use_reference=True, reference='MNI', use_affine=False, affine='MNI', output_name=None):
@@ -61,19 +68,6 @@ def nifti_from_matrix(matrix, output_file, ref_file=None, use_reference=True, re
     print('Image saved to: \n', output_file)
     return img
     
-from nimlab import datasets as nimds
-import numpy as np
-from nilearn import image, plotting, maskers
-import nibabel as nib
-import os
-import pandas as pd
-import glob
-import platform
-
-from nltools.mask import expand_mask, collapse_mask
-import nibabel as nib
-from nilearn.image import resample_to_img
-
 def generate_concentric_spherical_roi(subject, x, y, z, out_dir, max_radius=12):
     from nilearn import image
     from nltools.mask import create_sphere
