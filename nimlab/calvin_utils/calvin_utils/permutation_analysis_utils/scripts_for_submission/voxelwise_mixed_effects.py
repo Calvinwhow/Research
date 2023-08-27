@@ -38,11 +38,16 @@ def voxelwise_mixed_effects_regression_updated(data_df, formula_template, voxel_
     
     all_results = []
 
-    # Check if checkpoint exists, and if so, load it and continue from the last processed voxel
-    if os.path.exists(checkpoint_path):
-        all_results = pd.read_parquet(checkpoint_path).to_dict('records')
-        start_idx = len(all_results)
-    else:
+    # Attempt to use checkpointing
+    try:
+        # Check if checkpoint exists, and if so, load it and continue from the last processed voxel
+        if os.path.exists(checkpoint_path):
+            all_results = pd.read_parquet(checkpoint_path).to_dict('records')
+            start_idx = len(all_results)
+        else:
+            start_idx = 0
+    except Exception as e:
+        print(f"Failed to use checkpointing due to error: {e}. Continuing without checkpointing.")
         start_idx = 0
 
     # Loop through each voxel column and fit the model
@@ -80,9 +85,12 @@ def voxelwise_mixed_effects_regression_updated(data_df, formula_template, voxel_
         all_results.append(results)
 
         # Save a checkpoint if processed voxel count is a multiple of batch_size
-        if (idx + 1) % batch_size == 0:
-            pd.DataFrame(all_results).to_parquet(checkpoint_path)
-            gc.collect()
+        try:
+            if (idx + 1) % batch_size == 0:
+                pd.DataFrame(all_results).to_parquet(checkpoint_path)
+                gc.collect()
+        except Exception as e:
+            print(f"Failed to save checkpoint due to error: {e}. Continuing without saving checkpoint.")
 
     # Convert the results to a DataFrame
     results_df = pd.DataFrame(all_results)
