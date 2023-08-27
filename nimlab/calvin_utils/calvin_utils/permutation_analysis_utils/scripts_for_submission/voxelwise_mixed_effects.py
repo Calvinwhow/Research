@@ -11,14 +11,14 @@ import os
 from calvin_utils.nifti_utils.generate_nifti import view_and_save_nifti
 from calvin_utils.nifti_utils.matrix_utilities import unmask_matrix
 ########################################################################DEFINE INPUTS################################
-out_dir = ''
-path_to_data_df = ''
+out_dir = '/PHShome/cu135/permutation_tests/voxelwise_mixed_effects/pd_ad_age_stim_interaction'
+path_to_data_df = '/PHShome/cu135/permutation_tests/voxelwise_mixed_effects/dataframe_for_mixed_effects.csv'
 formula = 'outcome ~ Standardized_Age + voxel  + Standardized_Age:voxel'
 
 
 
 ################################################################DEFINE FUNCTIONS################################
-def voxelwise_mixed_effects_regression_updated(data_df, formula_template, voxel_columns, random_effects_column, model_type='linear', batch_size=50000, checkpoint_path='checkpoint.parquet'):
+def voxelwise_mixed_effects_regression_updated(data_df, formula_template, voxel_columns, random_effects_column, model_type='linear', batch_size=50000, checkpoint_path='checkpoint.parquet', use_checkpoints=False):
     """
     Perform mixed-effects regression voxelwise based on the provided formula template.
     
@@ -30,6 +30,7 @@ def voxelwise_mixed_effects_regression_updated(data_df, formula_template, voxel_
         model_type (str, default='linear'): Specifies the type of regression model to use ('linear' or 'logistic').
         batch_size (int, default=5000): Number of voxels to process before saving a checkpoint.
         checkpoint_path (str, default='checkpoint.parquet'): Path to save the intermediate results as a checkpoint.
+        use_checkpoints (bool, default=False): whether or not to use checkpoint function
 
     Returns:
         results_df (pd.DataFrame): DataFrame containing p-values, coefficient values, t-values for each voxel,
@@ -41,14 +42,13 @@ def voxelwise_mixed_effects_regression_updated(data_df, formula_template, voxel_
     # Attempt to use checkpointing
     try:
         # Check if checkpoint exists, and if so, load it and continue from the last processed voxel
-        if os.path.exists(checkpoint_path):
+        if (os.path.exists(checkpoint_path)) & (use_checkpoints):
             all_results = pd.read_parquet(checkpoint_path).to_dict('records')
             start_idx = len(all_results)
         else:
             start_idx = 0
     except Exception as e:
-        print(f"Failed to use checkpointing due to error: {e}. Continuing without checkpointing.")
-        start_idx = 0
+        print(f"Failed due to error: {e}.")
 
     # Loop through each voxel column and fit the model
     for idx, voxel in enumerate(tqdm(voxel_columns[start_idx:])):
@@ -86,9 +86,11 @@ def voxelwise_mixed_effects_regression_updated(data_df, formula_template, voxel_
 
         # Save a checkpoint if processed voxel count is a multiple of batch_size
         try:
-            if (idx + 1) % batch_size == 0:
+            if ((idx + 1) % batch_size == 0) & (use_checkpoints):
                 pd.DataFrame(all_results).to_parquet(checkpoint_path)
                 gc.collect()
+            else:
+                pass
         except Exception as e:
             print(f"Failed to save checkpoint due to error: {e}. Continuing without saving checkpoint.")
 
@@ -137,7 +139,8 @@ with warnings.catch_warnings():
                                                random_effects_column = 'One_Hot_Disease', 
                                                model_type='linear', 
                                                batch_size=50000, 
-                                               checkpoint_path='checkpoint.parquet')
+                                               checkpoint_path='checkpoint.parquet'
+                                               )
 
 results_df.to_csv(os.path.join(out_dir, 'voxelwise_mixed_effects.csv'))
 
