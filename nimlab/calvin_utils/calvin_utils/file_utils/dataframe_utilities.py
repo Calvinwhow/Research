@@ -1,5 +1,12 @@
-import pandas as pd
 import os
+import pandas as pd
+from natsort import natsorted
+
+def natsort_df(df):
+    #Sort the Dataframe            
+    df = df.reindex(index=natsorted(df.index))
+    sorted_df = df.reindex(columns=natsorted(df.columns))
+    return sorted_df
 
 def remove_column_spaces(df):
     # Making a copy of the DataFrame
