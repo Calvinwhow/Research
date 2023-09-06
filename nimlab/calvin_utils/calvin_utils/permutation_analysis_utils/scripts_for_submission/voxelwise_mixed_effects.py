@@ -71,7 +71,7 @@ def voxelwise_mixed_effects_regression_updated(data_df, formula_template, random
         try:
             if model_type == 'linear':
                 with HiddenPrints():
-                    model = sm.MixedLM.from_formula(formula, data=data_df, groups=data_df[random_effects_column]).fit()
+                    model = sm.MixedLM.from_formula(formula, data=data_df, groups=data_df[random_effects_column]).fit(method="cg")
             else:
                 raise ValueError(f"Unsupported model_type: {model_type}")
 
