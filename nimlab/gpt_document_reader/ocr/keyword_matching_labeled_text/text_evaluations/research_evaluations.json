@@ -1,0 +1,44 @@
+{
+    "Horn 2017PD Fxconn_OCR.txt": {
+        "Does this have case report-style information (Y)? Or is it a different type of article (N)": {
+            "chunk_1": "N",
+            "chunk_2": "N",
+            "chunk_3": "N"
+        },
+        "Do you think there might be a figure in this which has patient neuroimaging? (Y/N)": {
+            "chunk_1": "Y",
+            "chunk_2": "Y",
+            "chunk_3": "Y"
+        }
+    },
+    "NEURODEGENERATION IN RELATION TO NETWORKS_OCR.txt": {
+        "Does this have case report-style information (Y)? Or is it a different type of article (N)": {
+            "chunk_1": "N",
+            "chunk_2": "N"
+        },
+        "Do you think there might be a figure in this which has patient neuroimaging? (Y/N)": {
+            "chunk_1": "Y",
+            "chunk_2": "Y"
+        }
+    },
+    "network_dynamics_in_ad_ftd_OCR.txt": {
+        "Does this have case report-style information (Y)? Or is it a different type of article (N)": {
+            "chunk_1": "N",
+            "chunk_2": "N",
+            "chunk_3": "N"
+        },
+        "Do you think there might be a figure in this which has patient neuroimaging? (Y/N)": {
+            "chunk_1": "Y",
+            "chunk_2": "Y",
+            "chunk_3": "Yes"
+        }
+    },
+    "1196_OCR.txt": {
+        "Does this have case report-style information (Y)? Or is it a different type of article (N)": {
+            "chunk_1": "Y"
+        },
+        "Do you think there might be a figure in this which has patient neuroimaging? (Y/N)": {
+            "chunk_1": "Y"
+        }
+    }
+}
