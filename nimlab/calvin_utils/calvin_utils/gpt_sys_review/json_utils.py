@@ -191,6 +191,119 @@ class InclusionExclusionSummarizer:
         self.save_to_csv()
         self.save_to_csv(dropped=True)
         return self.df
+
+class CustomSummarizer:
+    """
+    Custom class to summarize research evaluation data based on fuzzy matching and keyword mapping.
+    
+    Attributes:
+    - json_path (str): Path to the JSON file containing answers.
+    - keyword_mapping (dict): Mapping of keywords to values.
+    - data (dict): Data read from the JSON file.
+    - df (DataFrame): DataFrame to store summarized results.
+    """
+    def __init__(self, json_path, keyword_mapping):
+        """
+        Initializes the CustomSummarizerFinal class.
+        
+        Parameters:
+        - json_path (str): Path to the JSON file containing answers.
+        - keyword_mapping (dict): Mapping of keywords to values.
+        """
+        import json
+        self.json_path = json_path
+        self.keyword_mapping = keyword_mapping
+        self.data = self.read_json()
+        self.df = self.summarize_results_with_mapping()
+    
+    def read_json(self):
+        """
+        Reads data from the JSON file specified during initialization.
+        
+        Returns:
+        - dict: Data read from the JSON file.
+        """
+        with open(self.json_path, 'r') as file:
+            return json.load(file)
+    
+    def exact_match(self, answer):
+        """
+        Checks for an exact match of keywords in the answer text.
+        
+        Parameters:
+        - answer (str): The answer text to be matched.
+        
+        Returns:
+        - int or np.nan or None: Returns the key if a match is found, otherwise None.
+        """
+        import re
+        cleaned_answer = re.sub(r'[^\w\s]', '', answer.lower())
+        for key, keywords in self.keyword_mapping.items():
+            for keyword in keywords:
+                if keyword.lower() in cleaned_answer.split():
+                    return key
+        return None
+    
+    def fuzzy_match(self, answer, threshold=60):
+        """
+        Fuzzy matches the answer with a list of keywords.
+        
+        Parameters:
+        - answer (str): The answer text to be matched.
+        - threshold (int): The similarity ratio threshold for a valid match.
+        
+        Returns:
+        - int or np.nan or None: Returns the key if a match is found, otherwise None.
+        """
+        from fuzzywuzzy import fuzz
+        best_match = None
+        highest_ratio = 0
+        for key, keywords in self.keyword_mapping.items():
+            for keyword in keywords:
+                ratio = fuzz.ratio(answer.lower(), keyword.lower())
+                if ratio > highest_ratio:
+                    highest_ratio = ratio
+                    best_match = key
+        if highest_ratio >= threshold:
+            return best_match
+        else:
+            return None
+    
+    def keyword_or_fuzzy_match(self, answer):
+        """
+        Applies either exact matching or fuzzy matching based on the result of exact matching.
+        
+        Parameters:
+        - answer (str): The answer text to be matched.
+        
+        Returns:
+        - int or np.nan or None: Returns the key if a match is found, otherwise None.
+        """
+        exact_result = self.exact_match(answer)
+        return exact_result if exact_result is not None else self.fuzzy_match(answer)
+    
+    def summarize_results_with_mapping(self):
+        """
+        Summarizes the results based on keyword mapping and fuzzy matching.
+        
+        Returns:
+        - DataFrame: Pandas DataFrame containing the summarized results.
+        """
+        import numpy as np
+        import pandas as pd
+        summary_dict = {}
+        for article, questions in self.data.items():
+            summary_dict[article] = {}
+            for question, chunks in questions.items():
+                if self.keyword_mapping:
+                    mapped_answers = [self.keyword_or_fuzzy_match(answer) for answer in chunks.values()]
+                    if all(x is np.nan for x in mapped_answers) or all(x is None for x in mapped_answers):
+                        summary_dict[article][question] = np.nan
+                    else:
+                        valid_answers = [x for x in mapped_answers if x is not np.nan and x is not None]
+                        summary_dict[article][question] = np.sum(valid_answers) if valid_answers else np.nan
+        df = pd.DataFrame.from_dict(summary_dict, orient='index').fillna(np.nan).astype('Int64')
+        return df
     
 class CustomSummarizer(InclusionExclusionSummarizer):
     """
@@ -211,18 +324,36 @@ class CustomSummarizer(InclusionExclusionSummarizer):
         super().__init__(json_path)
         self.keyword_mapping = keyword_mapping
     
-    def fuzzy_match(self, answer, threshold=80):
+    def exact_match(self, answer):
         """
-        Fuzzy match the answer with a list of keywords.
+        Checks for an exact match of keywords in the answer text.
         
         Parameters:
         - answer (str): The answer text to be matched.
-        - keyword_mapping (dict): Dictionary mapping a key to a list of values.
+        
+        Returns:
+        - int or np.nan or None: Returns the key if a match is found, otherwise None.
+        """
+        import re
+        cleaned_answer = re.sub(r'[^\w\s]', '', answer.lower())
+        for key, keywords in self.keyword_mapping.items():
+            for keyword in keywords:
+                if keyword.lower() in cleaned_answer.split():
+                    return key
+        return None
+    
+    def fuzzy_match(self, answer, threshold=60):
+        """
+        Fuzzy matches the answer with a list of keywords.
+        
+        Parameters:
+        - answer (str): The answer text to be matched.
         - threshold (int): The similarity ratio threshold for a valid match.
         
         Returns:
-        - str or float: Returns the key if a match is found; otherwise, returns np.nan.
+        - int or np.nan or None: Returns the key if a match is found, otherwise None.
         """
+        from fuzzywuzzy import fuzz
         best_match = None
         highest_ratio = 0
         for key, keywords in self.keyword_mapping.items():
@@ -231,44 +362,45 @@ class CustomSummarizer(InclusionExclusionSummarizer):
                 if ratio > highest_ratio:
                     highest_ratio = ratio
                     best_match = key
-
         if highest_ratio >= threshold:
             return best_match
         else:
-            return np.nan
-    def gather_results_as_tuple(self, chunks):
+            return None
+    
+    def keyword_or_fuzzy_match(self, answer):
         """
-        Gathers the results for each question across chunks and places them in a tuple.
-
+        Applies either exact matching or fuzzy matching based on the result of exact matching.
+        
         Parameters:
-        - chunks (dict): Dictionary containing the chunked answers for a specific question.
-
+        - answer (str): The answer text to be matched.
+        
         Returns:
-        - tuple: A tuple containing the answers for the specific question across all chunks.
+        - int or np.nan or None: Returns the key if a match is found, otherwise None.
         """
-        return tuple(chunks.values())
-
+        exact_result = self.exact_match(answer)
+        return exact_result if exact_result is not None else self.fuzzy_match(answer)
+    
     def summarize_results_with_mapping(self):
         """
-        Summarizes the results based on the user-defined keyword mapping.
+        Summarizes the results based on keyword mapping and fuzzy matching.
         
         Returns:
         - DataFrame: Pandas DataFrame containing the summarized results.
         """
+        import numpy as np
+        import pandas as pd
         summary_dict = {}
         for article, questions in self.data.items():
             summary_dict[article] = {}
             for question, chunks in questions.items():
                 if self.keyword_mapping:
-                    mapped_answers = [self.fuzzy_match(answer) for answer in chunks.values()]
-                    summary_dict[article][question] = sum(mapped_answers)
-                else:
-                    mapped_answers = self.gather_results_as_tuple(chunks)
-                    summary_dict[article][question] = mapped_answers
-        
-        # Convert the summary dictionary to a DataFrame
-        df = pd.DataFrame.from_dict(summary_dict, orient='index')
-        
+                    mapped_answers = [self.keyword_or_fuzzy_match(answer) for answer in chunks.values()]
+                    if all(x is np.nan for x in mapped_answers) or all(x is None for x in mapped_answers):
+                        summary_dict[article][question] = np.nan
+                    else:
+                        valid_answers = [x for x in mapped_answers if x is not np.nan and x is not None]
+                        summary_dict[article][question] = np.sum(valid_answers) if valid_answers else 'Unidentified'
+        df = pd.DataFrame.from_dict(summary_dict, orient='index').fillna(np.nan)
         return df
     
     def run_custom(self):

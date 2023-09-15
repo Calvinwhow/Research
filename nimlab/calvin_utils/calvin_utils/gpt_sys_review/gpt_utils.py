@@ -1,6 +1,7 @@
 import openai
 import json
 import os 
+import time
 import numpy as np
 from tqdm import tqdm
 from calvin_utils.gpt_sys_review.txt_utils import TextChunker
@@ -34,7 +35,9 @@ class QuestionTemplate:
         """Method to print data extraction questions."""
         
         print("Here are example data extraction questions:")
-        print(json.dumps(self.extraction_questions, indent=4))
+        print(json.dumps(self.strict_extraction_questions, indent=4))
+        print("Here are some more generalizable data extraction questions:")
+        print(json.dumps(self.lenient_extraction_questions, indent=4))
         print("Here is a question template")
         print(json.dumps(self.template_questions, indent=4))
     
@@ -58,7 +61,7 @@ class QuestionTemplate:
                             'Had focal or widespread brain atrophy': 'neurodegenerative',
                             'Atypical cases with selective (e.g., semantic) memory loss or material/topographic-specific memory loss': 'atypical_case'
                         }  
-        self.extraction_questions = {'Does the patient(s) represent(s) the whole experience of the investigator (center) or is the selection method unclear to the extent that other patients with similar presentation may not have been reported? (Good/Bad/Unclear)': 'representative_case_quality',
+        self.strict_extraction_questions = {'Does the patient(s) represent(s) the whole experience of the investigator (center) or is the selection method unclear to the extent that other patients with similar presentation may not have been reported? (Good/Bad/Unclear)': 'representative_case_quality',
                             'Was patient’s causal exposure clearly described? (Good/Bad/Unclear)': 'causality_quality',
                             'Were diagnostic tests or assessment methods and the results clearly described (amnesia tests)? (Good/Bad/Unclear)': 'phenotyping_quality',
                             'Were other alternative causes that may explain the observation (amnesia) ruled out? (Good/Bad/Unclear)': 'workup_quality',
@@ -67,6 +70,16 @@ class QuestionTemplate:
                             'Was the lesion image taken around the time of observation (amnesia) assessment? (Good/Bad/Unclear)': 'temporal_causality_quality',
                             'Is the case(s) described with sufficient details to allow other investigators to replicate the research or to allow practitioners make inferences related to their own practice? (Good/Bad/Unclear)': 'history_quality_2'
             }
+        self.lenient_extraction_questions = {'How affected is this study by selection bias? Little (Good). Very (Bad). Unsure (Unclear).': 'selection_bias',
+                            'How well was the timeline of lesion/symptom onset described? (Good/Bad/Unclear)': 'exposure',
+                            'How affected is this case by attribution error? Little (Good). Very (Bad). Unsure (Unclear).': 'outcome',
+                            'How reasonable is the attribution of the lesion/diagnosis to the symptom? (Good/Bad/Unclear)': 'attribution_error',
+                            'How well was the patients baseline pre-lesion described? (Good/Bad/Unclear)': 'pre_event_assessment',
+                            'How well was the patients outcome post-lesion described? (Good/Bad/Unclear)': 'post_event_assessment',
+                            'Do you think the neuroimaging was taken within temporal proximity to the lesion? Days-weeks (Good). Months-years (Bad). Unsure (Unclear).': 'lesion_related-images',
+                            'Do you think another practitioner would come to the same conclusion (diagnosis/attribution) that this group did? (Good/Bad/Unclear)': 'replicability',
+                            'How is the quality of this case overall? (Good/Bad/Unclear)': 'overall_appraisal'
+            }        
         self.template_questions = {' ? (metric/metric/metric)': 'question_label',
                             ' ? (metric/metric/metric)': 'question_label',
                             ' ? (metric/metric/metric)': 'question_label',
@@ -172,7 +185,7 @@ class OpenAIChatEvaluator(OpenAIEvaluator):
     - questions (dict): Dictionary mapping article types to evaluation questions.
     """
     
-    def __init__(self, api_key_path, json_file_path, keys_to_consider, question_type, question, token_limit=16000, question_token=500, answer_token=500):
+    def __init__(self, api_key_path, json_file_path, keys_to_consider, question_type, question, token_limit=16000, question_token=500, answer_token=500, debug=False):
         """
         Initializes the OpenAIChatEvaluator class.
         
@@ -196,6 +209,7 @@ class OpenAIChatEvaluator(OpenAIEvaluator):
         self.question_type = question_type
         self.extract_relevant_text()
         self.all_answers = {}
+        self.debug = debug
 
     def read_json(self, json_file_path):
         """
@@ -234,11 +248,15 @@ class OpenAIChatEvaluator(OpenAIEvaluator):
         for file_name, selected_text in tqdm(self.relevant_text_by_file.items()):
             # Initialize a dictionary to store answers for this file
             self.all_answers[file_name] = {}
+            if self.debug:
+                print('On file:', file_name)
             
             # Chunk the text
             text_chunker = TextChunker(selected_text, np.round((self.token_limit) * 0.7))
             text_chunker.chunk_text()
             chunks = text_chunker.get_chunks()
+            if self.debug:
+                print('Number of chunks:', len(chunks))
             
             # Initialize a dictionary to store chunk-level answers for each question
             for question in self.questions.keys():
@@ -250,30 +268,47 @@ class OpenAIChatEvaluator(OpenAIEvaluator):
                 conversation = []
                 conversation.append({"role": "system", "content": "You are a helpful assistant."})
                 conversation.append({"role": "user", "content": f"Text Chunk: {chunk}"})
+                if self.debug:
+                    print('On chunk:', chunk_index)
                 
                 # Initialize a conversation with OpenAI for this chunk
-                try:
-                    for q_index, q in enumerate(self.questions.keys()):
-                        # print(self.questions.keys())
-                        # Add the question to the conversation and send it
-                        conversation.append({"role": "user", "content": q})
-                        response = openai.ChatCompletion.create(
-                            model="gpt-3.5-turbo-16k",
-                            messages=conversation
-                        )
-                        # Retrieve the assistant's last answer
-                        answer = response['choices'][-1]['message']['content']
-                        # Store the answer for this question and this chunk
-                        self.all_answers[file_name][q][f"chunk_{chunk_index+1}"] = answer
+                for q_index, q in enumerate(self.questions.keys()):
+                    # Use a while loop to allow 3 submission attempts
+                    retry_count = 0
+                    while retry_count < 3:
+                        try:
+                            # Add the question to the conversation and send it
+                            conversation.append({"role": "user", "content": q})
+                            response = openai.ChatCompletion.create(
+                                model="gpt-3.5-turbo-16k",
+                                messages=conversation
+                            )
+                            
+                            # Retrieve the assistant's last answer
+                            answer = response['choices'][-1]['message']['content']
+                            
+                            # Store the answer for this question and this chunk
+                            self.all_answers[file_name][q][f"chunk_{chunk_index+1}"] = answer
+                            
+                            # Add the assistant's answer back to the conversation to maintain context
+                            conversation.append({"role": "assistant", "content": answer})
+                            
+                            time.sleep(0.1)
+                            break  # Exit the loop if successful
                         
-                        # Add the assistant's answer back to the conversation to maintain context
-                        conversation.append({"role": "assistant", "content": answer})
-                except openai.Error as e:
-                    print(f"OpenAI API Error: {e}")
-                    self.all_answers[file_name][q] = "Unidentified"
-                except Exception as e:
-                    print(f"An error occurred: {e}")
-                    self.all_answers[file_name][q] = "Unidentified"
+                        #Handle Exceptions
+                        except Exception as e:
+                            if type(e).__name__ == 'RateLimitError':
+                                print(f"Rate limit error: {e}. Retrying... ({retry_count+1})")
+                                retry_count += 1
+                                time.sleep(30)
+                            else:
+                                print(f"An error occurred: {e}. Retrying... ({retry_count+1})")
+                                retry_count += 1
+                                time.sleep(5)
+                                            
+                    if retry_count == 3:
+                        self.all_answers[file_name][q][f"chunk_{chunk_index+1}"] = "Unidentified"
                     
         return self.all_answers
         
