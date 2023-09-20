@@ -5,73 +5,68 @@ import json
 class TextChunker:
     """
     A class to chunk a given text into smaller segments based on a token limit.
-    
-    Attributes:
-    - text (str): The text to be chunked.
-    - token_limit (int): The maximum number of tokens allowed in each chunk.
-    - chunks (list): List to store the generated text chunks.
-    
-    Methods:
-    - chunk_text: Splits the text into smaller segments based on the token limit.
-    - get_chunks: Returns the list of generated text chunks.
-    
-    Example Usage:
-    # # Setting the token limit to 75% of GPT-3's maximum token limit (4096)
-    # token_limit = int(0.75 * 4096)  # About 3072 tokens
-
-    # # Reading the text file
-    # file_path = '/mnt/data/Horn 2017PD Fxconn_OCR.txt'
-    # with open(file_path, 'r', encoding='utf-8') as file:
-    #     text = file.read()
-
-    # # Creating an instance of the TextChunker class
-    # text_chunker = TextChunker(text, token_limit)
-
-    # # Chunking the text
-    # text_chunker.chunk_text()
-
-    # # Getting the list of chunks
-    # chunks = text_chunker.get_chunks()
-
-    # # Displaying the first chunk as a sample
-    # chunks[0][:500]  # Displaying the first 500 characters of the first chunk as a sample
     """
     
-    def __init__(self, text, token_limit):
+    def __init__(self, text, token_limit, debug=False):
         """
         Initializes the TextChunker class with the text and token limit.
         
         Parameters:
         - text (str): The text to be chunked.
         - token_limit (int): The maximum number of tokens allowed in each chunk.
+        - debug (bool): Flag to enable debug print statements.
         """
         self.text = text
         self.token_limit = token_limit
         self.chunks = []
+        self.debug = debug
+
+        if self.debug:
+            print(f"Initialized with token limit: {self.token_limit}")
     
     def chunk_text(self):
         """
         Splits the text into smaller segments based on the token limit.
         """
         words = self.text.split()
+        
+        if self.debug:
+            print(f"Total words to process: {len(words)}")
+            if all(word == '' for word in words):
+                print("Warning: All words are empty spaces.")
+        
         current_chunk = []
         current_chunk_tokens = 0
-        
+
         for word in words:
-            # Considering each word as a token and adding 1 for the space
             tokens_in_word = len(word.split()) + 1
+            
+            if self.debug:
+                print(f"Found {tokens_in_word} tokens in word: '{word}'")
             
             if current_chunk_tokens + tokens_in_word <= self.token_limit:
                 current_chunk.append(word)
                 current_chunk_tokens += tokens_in_word
+
+                if self.debug:
+                    print(f"Added word to current chunk, total tokens now: {current_chunk_tokens}")
             else:
                 self.chunks.append(' '.join(current_chunk))
+                
+                if self.debug:
+                    print(f"Chunk completed, appended to chunks list.")
+                
                 current_chunk = [word]
                 current_chunk_tokens = tokens_in_word
-        
-        # Adding the last chunk if any words are left
+                
+                if self.debug:
+                    print(f"Started new chunk with word: '{word}', total tokens now: {current_chunk_tokens}")
+
         if current_chunk:
             self.chunks.append(' '.join(current_chunk))
+            
+            if self.debug:
+                print(f"Final chunk added to chunks list.")
     
     def get_chunks(self):
         """
@@ -81,5 +76,3 @@ class TextChunker:
         - list: List containing the generated text chunks.
         """
         return self.chunks
-
-            

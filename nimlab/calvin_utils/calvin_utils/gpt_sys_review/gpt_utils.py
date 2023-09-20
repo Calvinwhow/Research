@@ -185,7 +185,7 @@ class OpenAIChatEvaluator(OpenAIEvaluator):
     - questions (dict): Dictionary mapping article types to evaluation questions.
     """
     
-    def __init__(self, api_key_path, json_file_path, keys_to_consider, question_type, question, token_limit=16000, question_token=500, answer_token=500, debug=False):
+    def __init__(self, api_key_path, json_file_path, keys_to_consider, question_type, question, token_limit=8192, question_token=500, answer_token=500, debug=False, test_mode=True):
         """
         Initializes the OpenAIChatEvaluator class.
         
@@ -197,8 +197,9 @@ class OpenAIChatEvaluator(OpenAIEvaluator):
         - token_limit (int): The maximum number of tokens allowed in each OpenAI API call. Default is 16000.
         - question_token (int): The number of tokens reserved for the question. Default is 500.
         - answer_token (int): The number of tokens reserved for the answer. Default is 500.
+        - test_mode (bool): Will only pass the first article to GPT. Used to iteratively refine the passed questions.
         """
-        super().__init__(api_key_path)  # Call the parent class's constructor
+        super().__init__(api_key_path)
         self.questions = question
         self.token_limit = token_limit
         self.question_token = question_token
@@ -207,9 +208,17 @@ class OpenAIChatEvaluator(OpenAIEvaluator):
         self.json_data = self.read_json(json_file_path)
         self.keys_to_consider = keys_to_consider
         self.question_type = question_type
-        self.extract_relevant_text()
         self.all_answers = {}
         self.debug = debug
+        if self.question_type =='research':
+            self.directive = "You are a medical assistant. Your task is to carefully evaluate the following case report. Use both explicit information and reasonable inferences to answer the questions."
+            self.chunk_flag = "[CASE REPORT]"
+        self.test_mode = test_mode
+        if self.test_mode:
+            first_key = next(iter(self.json_data.keys()))
+            self.json_data = {first_key: self.json_data[first_key]}
+            print(f'Will evaluate only {len(self.json_data)} articles for testing.')
+        self.extract_relevant_text()
 
     def read_json(self, json_file_path):
         """
@@ -252,6 +261,9 @@ class OpenAIChatEvaluator(OpenAIEvaluator):
                 print('On file:', file_name)
             
             # Chunk the text
+            if self.debug:
+                print('Text associated with file:', selected_text)
+                print(f'Allowing {self.token_limit} tokens per submission')
             text_chunker = TextChunker(selected_text, np.round((self.token_limit) * 0.7))
             text_chunker.chunk_text()
             chunks = text_chunker.get_chunks()
@@ -266,10 +278,11 @@ class OpenAIChatEvaluator(OpenAIEvaluator):
             for chunk_index, chunk in enumerate(chunks):
                 # Reset the conversation each time
                 conversation = []
-                conversation.append({"role": "system", "content": "You are a helpful assistant."})
-                conversation.append({"role": "user", "content": f"Text Chunk: {chunk}"})
+                conversation.append({"role": "system", "content": f"{self.directive}"})
+                conversation.append({"role": "user", "content": f"{self.chunk_flag}: {chunk}"})
                 if self.debug:
-                    print('On chunk:', chunk_index)
+                    print(f'On chunk: {chunk_index}/{len(chunks)}')
+                    print(f'Text in chunks: {chunk}')
                 
                 # Initialize a conversation with OpenAI for this chunk
                 for q_index, q in enumerate(self.questions.keys()):
@@ -278,14 +291,24 @@ class OpenAIChatEvaluator(OpenAIEvaluator):
                     while retry_count < 3:
                         try:
                             # Add the question to the conversation and send it
-                            conversation.append({"role": "user", "content": q})
+                            if self.debug:
+                                print('Setting up conversation')
+                                print(q)
+                            conversation.append({"role": "user", "content": f'Based on the {self.chunk_flag} provided, {q}'})
+                            if self.debug:
+                                print('Submitting conversation to OpenAI')
                             response = openai.ChatCompletion.create(
-                                model="gpt-3.5-turbo-16k",
-                                messages=conversation
+                                model="gpt-4",
+                                messages=conversation,
+                                temperature=1.0,
+                                max_tokens=50
                             )
-                            
+                            if self.debug:
+                                print('Handling OpenAI Response')
                             # Retrieve the assistant's last answer
                             answer = response['choices'][-1]['message']['content']
+                            if self.test_mode:
+                                print(f"Q: {q} \n A: {answer}")
                             
                             # Store the answer for this question and this chunk
                             self.all_answers[file_name][q][f"chunk_{chunk_index+1}"] = answer
@@ -309,7 +332,8 @@ class OpenAIChatEvaluator(OpenAIEvaluator):
                                             
                     if retry_count == 3:
                         self.all_answers[file_name][q][f"chunk_{chunk_index+1}"] = "Unidentified"
-                    
+            if self.test_mode:
+                print(f'{response["usage"]["total_tokens"]} tokens counted by the OpenAI API. Estimated cost: {float(response["usage"]["total_tokens"])/1000*0.03}')
         return self.all_answers
         
     def send_to_openai(self, chunks):
