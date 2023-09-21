@@ -2,6 +2,7 @@ import openai
 import json
 import os 
 import time
+import sys
 import numpy as np
 from tqdm import tqdm
 from calvin_utils.gpt_sys_review.txt_utils import TextChunker
@@ -358,55 +359,60 @@ class OpenAIChatEvaluator(OpenAIEvaluator):
             return retry_count + 1, 1
 
     def evaluate_all_files(self):
-        for file_name, selected_text in tqdm(self.relevant_text_by_file.items()):
-            # Chunk text by token limits
-            chunks = self.call_chunker(selected_text)
-            if self.debug:
-                print('On file:', file_name)
-            
-            # Initialize a dictionary to store chunk-level answers for each question
-            self.all_answers[file_name] = {}
-            for question in self.questions.keys():
-                self.all_answers[file_name][question] = {}
-
-            # Send a query for each chunk
-            for chunk_index, chunk in enumerate(chunks):
+        try:
+            for file_name, selected_text in tqdm(self.relevant_text_by_file.items()):
+                # Chunk text by token limits
+                chunks = self.call_chunker(selected_text)
                 if self.debug:
-                    print(f'On chunk: {chunk_index}/{len(chunks)}')
-                    print(f'Text in chunks: {chunk}')
-                # Initialize a conversation with OpenAI for this chunk
-                for q_index, q in enumerate(self.questions.keys()):
-                    
-                    # Generate the conversation to submit
-                    conversation = self.generate_submission(chunk, q)
-                    
-                    # Use a while loop to allow 3 submission attempts
-                    retry_count = 0
-                    while retry_count < 4:
-                        try:
-                            if self.debug:
-                                print('Submitting conversation to OpenAI')
-                            answer, tokens_used = self.get_response_from_openai(conversation)
-                            if self.debug:
-                                print(f"Q: {q} \n A: {answer}")
-                                
-                            # Store the answer for this question and this chunk
-                            self.all_answers[file_name][q][f"chunk_{chunk_index+1}"] = answer
-                            
-                            time.sleep(0.1)
-                            break  # Exit the loop if successful
-                        
-                        #Handle Exceptions
-                        except Exception as e:
-                            if retry_count == 3:
-                                print(f"Exceeded 3 attempts due to error: \n {e}")
-                                self.all_answers[file_name][q][f"chunk_{chunk_index+1}"] = "Unidentified"
-                            retry_count, sleep_time = self.handle_response_exception(e, q_index, retry_count)
-                            time.sleep(sleep_time)
+                    print('On file:', file_name)
+                
+                # Initialize a dictionary to store chunk-level answers for each question
+                self.all_answers[file_name] = {}
+                for question in self.questions.keys():
+                    self.all_answers[file_name][question] = {}
 
-            if self.test_mode:
-                print(f'{tokens_used} tokens counted by the OpenAI API. Estimated cost per article: {tokens_used*self.cost*len(self.questions.items())}')
-        return self.all_answers
+                # Send a query for each chunk
+                for chunk_index, chunk in enumerate(chunks):
+                    if self.debug:
+                        print(f'On chunk: {chunk_index}/{len(chunks)}')
+                        print(f'Text in chunks: {chunk}')
+                    # Initialize a conversation with OpenAI for this chunk
+                    for q_index, q in enumerate(self.questions.keys()):
+                        
+                        # Generate the conversation to submit
+                        conversation = self.generate_submission(chunk, q)
+                        
+                        # Use a while loop to allow 3 submission attempts
+                        retry_count = 0
+                        while retry_count < 4:
+                            try:
+                                if self.debug:
+                                    print('Submitting conversation to OpenAI')
+                                answer, tokens_used = self.get_response_from_openai(conversation)
+                                if self.debug:
+                                    print(f"Q: {q} \n A: {answer}")
+                                    
+                                # Store the answer for this question and this chunk
+                                self.all_answers[file_name][q][f"chunk_{chunk_index+1}"] = answer
+                                
+                                time.sleep(0.1)
+                                break  # Exit the loop if successful
+                            
+                            #Handle Exceptions
+                            except Exception as e:
+                                if retry_count == 3:
+                                    print(f"Exceeded 3 attempts due to error: \n {e}")
+                                    self.all_answers[file_name][q][f"chunk_{chunk_index+1}"] = "Unidentified"
+                                retry_count, sleep_time = self.handle_response_exception(e, q_index, retry_count)
+                                time.sleep(sleep_time)
+
+                if self.test_mode:
+                    print(f'{tokens_used} tokens counted by the OpenAI API. Estimated cost per article: {tokens_used*self.cost*len(self.questions.items())}')
+            return self.all_answers
+        except KeyboardInterrupt:
+            print("KeyboardInterrupt detected. Saving results and closing.")
+            self.save_to_json(self.all_answers)
+            sys.exit(0)
 
     def save_to_json(self, output_dict):
         """
@@ -426,6 +432,7 @@ class OpenAIChatEvaluator(OpenAIEvaluator):
         save_file = os.path.join(out_dir, f'{self.question_type}_evaluations.json')
         with open(save_file, 'w') as f:
             json.dump(output_dict, f, indent=0)
+        print(f"Saved to: {save_file}")
         return save_file
     
 class CaseReportLabeler(OpenAIChatEvaluator):

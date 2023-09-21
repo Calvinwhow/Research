@@ -32,4 +32,5 @@ env/
 
 openai_key.txt
 
-/Users/cu135/Library/CloudStorage/OneDrive-Personal/OneDrive_Documents/Work/Software/Research/nimlab/gpt_document_reader
+# Ignore all documents in GPT Document Readers
+gpt_document_reader/*
