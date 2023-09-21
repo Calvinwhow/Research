@@ -185,7 +185,7 @@ class OpenAIChatEvaluator(OpenAIEvaluator):
     - questions (dict): Dictionary mapping article types to evaluation questions.
     """
     
-    def __init__(self, api_key_path, json_file_path, keys_to_consider, question_type, question, token_limit=8192, question_token=500, answer_token=500, debug=False, test_mode=True):
+    def __init__(self, api_key_path, json_file_path, keys_to_consider, question_type, question, model_choice="gpt3_small", debug=False, test_mode=True):
         """
         Initializes the OpenAIChatEvaluator class.
         
@@ -201,24 +201,64 @@ class OpenAIChatEvaluator(OpenAIEvaluator):
         """
         super().__init__(api_key_path)
         self.questions = question
-        self.token_limit = token_limit
-        self.question_token = question_token
-        self.answer_token = answer_token
         self.json_path = json_file_path
         self.json_data = self.read_json(json_file_path)
         self.keys_to_consider = keys_to_consider
         self.question_type = question_type
         self.all_answers = {}
         self.debug = debug
-        if self.question_type =='research':
-            self.directive = "You are a medical assistant. Your task is to carefully evaluate the following case report. Use both explicit information and reasonable inferences to answer the questions."
-            self.chunk_flag = "[CASE REPORT]"
+        self.get_model_data(model_choice)
+        self.get_question_settings(question_type)
+        
         self.test_mode = test_mode
-        if self.test_mode:
+        if self.test_mode and self.json_data:
             first_key = next(iter(self.json_data.keys()))
             self.json_data = {first_key: self.json_data[first_key]}
             print(f'Will evaluate only {len(self.json_data)} articles for testing.')
         self.extract_relevant_text()
+        
+    def get_question_settings(self, question_type):
+        """
+        Sets the manner in which directives and questions are posed to the model.
+        """
+        if self.question_type=="research":
+            self.directive = "You are a research assistant. Your task is to carefully evaluate the following research report. Use both explicit information and reasonable inferences to answer the questions."
+            self.chunk_flag = "[RESEARCH REPORT]"
+            self.dir = "research_extractions"
+        elif self.question_type=="case":
+            self.directive = "You are a medical assistant. Your task is to carefully evaluate the following case report. Use both explicit information and reasonable inferences to answer the questions."
+            self.chunk_flag = "[CASE REPORT]"
+            self.dir = "case_extractions"
+        elif self.question_type=="labelling":
+            self.directive = "You are a text labelling assistant. Your task is to carefully evaluate the following case report. Use both explicit information and reasonable inferences to answer the questions."
+            self.chunk_flag = "[SEGMENT]"
+            self.dir = "labelling_extractions"
+            self.token_limit = 500
+        else:
+            raise ValueError(f"Model choice {question_type} not supported, please choose gpt4, gpt3_large, or gpt3_small.")
+        
+    def get_model_data(self, model_choice):
+        """
+        Sets values for the OpenAI model to use.
+        """
+        self.temperature = 1.0
+        self.response_tokens = 50
+        self.question_token = 500
+        # Assign Model-Specific Values
+        if model_choice=="gpt4":
+            self.model = "gpt-4"
+            self.token_limit = 8192 - 2*(self.question_token)
+            self.cost = 0.03/1000
+        elif model_choice=="gpt3_large":
+            self.model = "gpt-3.5-turbo-16k"
+            self.token_limit = 16385 - 2*(self.question_token)
+            self.cost = 0.003/1000
+        elif model_choice=="gpt3_small":
+            self.model = "gpt-3.5-turbo"
+            self.token_limit = 4097 - np.round(1.2*(self.question_token))
+            self.cost = 0.0015/1000
+        else:
+            raise ValueError(f"Model choice {model_choice} not supported, please choose gpt4, gpt3_large, or gpt3_small.")
 
     def read_json(self, json_file_path):
         """
@@ -239,7 +279,6 @@ class OpenAIChatEvaluator(OpenAIEvaluator):
         except json.JSONDecodeError:
             print("Error: Could not decode the JSON file.")
             return {}
-
     
     def extract_relevant_text(self):
         """
@@ -252,119 +291,123 @@ class OpenAIChatEvaluator(OpenAIEvaluator):
                 if key in self.keys_to_consider:
                     selected_text += value
             self.relevant_text_by_file[file_name] = selected_text
+            
+    def call_chunker(self, selected_text):
+        """
+        Uses TextChunker defined in text_utils.py to extract text in chunks
+        """
+        text_chunker = TextChunker(selected_text, self.token_limit)
+        text_chunker.chunk_text()
+        chunks = text_chunker.get_chunks()
+        if self.debug:
+                print('Text associated with file:', selected_text)
+                print(f'Allowing {self.token_limit} tokens per submission')
+                print('Number of chunks:', len(chunks))
+        return chunks
+    
+    def generate_submission(self, chunk, q):
+        """
+        Prepares the submission to the OpenAI Model
+        """
+        conversation = [{"role": "system", "content": f"{self.directive}"},
+                        {"role": "user", "content": f"{self.chunk_flag}: {chunk}"}]
+        if (self.model == "gpt-4") or (self.model == "gpt-3.5-turbo-16k") or (self.model == "gpt-3.5-turbo"):
+            conversation.append({"role": "user", "content": f'Based on the {self.chunk_flag} provided, {q}'})
+        else:
+            raise ValueError(f"{self.model} not yet supported.")
+        return conversation
+    
+    def get_response_from_openai(self, conversation):
+        """
+        Sends a conversation to OpenAI and retrieves the assistant's last answer.
+
+        Parameters:
+        - conversation (list): The conversation history, including the system message, user question, and assistant's response if any.
+
+        Returns:
+        - str: The assistant's last answer retrieved from OpenAI's API.
+        """
+        response = openai.ChatCompletion.create(
+            model=self.model,
+            messages=conversation,
+            temperature=self.temperature,
+            max_tokens=self.response_tokens
+        )
+        if self.debug:
+            print('Handling OpenAI Response')
+        return response['choices'][-1]['message']['content'], response["usage"]["total_tokens"]
+        
+    def handle_response_exception(self, e, q_index, retry_count):
+        """
+        Handles exceptions during API calls to OpenAI.
+
+        Parameters:
+        - e (Exception): The exception object.
+        - q_index (int): The index of the current question being processed.
+        - retry_count (int): The current count of retry attempts.
+
+        Returns:
+        - int: The updated retry_count.
+        - int: The sleep time in seconds before the next retry.
+        """
+        if type(e).__name__ == 'RateLimitError':
+            print(f"Rate limit error: {e}. Retrying Question No. {q_index} Attempt:({retry_count+1})")
+            return retry_count + 1, 30
+        else:
+            print(f"An error occurred: {e}. Retrying Question No. {q_index} Attempt:({retry_count+1})")
+            return retry_count + 1, 1
 
     def evaluate_all_files(self):
         for file_name, selected_text in tqdm(self.relevant_text_by_file.items()):
-            # Initialize a dictionary to store answers for this file
-            self.all_answers[file_name] = {}
+            # Chunk text by token limits
+            chunks = self.call_chunker(selected_text)
             if self.debug:
                 print('On file:', file_name)
             
-            # Chunk the text
-            if self.debug:
-                print('Text associated with file:', selected_text)
-                print(f'Allowing {self.token_limit} tokens per submission')
-            text_chunker = TextChunker(selected_text, np.round((self.token_limit) * 0.7))
-            text_chunker.chunk_text()
-            chunks = text_chunker.get_chunks()
-            if self.debug:
-                print('Number of chunks:', len(chunks))
-            
             # Initialize a dictionary to store chunk-level answers for each question
+            self.all_answers[file_name] = {}
             for question in self.questions.keys():
                 self.all_answers[file_name][question] = {}
 
             # Send a query for each chunk
             for chunk_index, chunk in enumerate(chunks):
-                # Reset the conversation each time
-                conversation = []
-                conversation.append({"role": "system", "content": f"{self.directive}"})
-                conversation.append({"role": "user", "content": f"{self.chunk_flag}: {chunk}"})
                 if self.debug:
                     print(f'On chunk: {chunk_index}/{len(chunks)}')
                     print(f'Text in chunks: {chunk}')
-                
                 # Initialize a conversation with OpenAI for this chunk
                 for q_index, q in enumerate(self.questions.keys()):
+                    
+                    # Generate the conversation to submit
+                    conversation = self.generate_submission(chunk, q)
+                    
                     # Use a while loop to allow 3 submission attempts
                     retry_count = 0
-                    while retry_count < 3:
+                    while retry_count < 4:
                         try:
-                            # Add the question to the conversation and send it
-                            if self.debug:
-                                print('Setting up conversation')
-                                print(q)
-                            conversation.append({"role": "user", "content": f'Based on the {self.chunk_flag} provided, {q}'})
                             if self.debug:
                                 print('Submitting conversation to OpenAI')
-                            response = openai.ChatCompletion.create(
-                                model="gpt-4",
-                                messages=conversation,
-                                temperature=1.0,
-                                max_tokens=50
-                            )
+                            answer, tokens_used = self.get_response_from_openai(conversation)
                             if self.debug:
-                                print('Handling OpenAI Response')
-                            # Retrieve the assistant's last answer
-                            answer = response['choices'][-1]['message']['content']
-                            if self.test_mode:
                                 print(f"Q: {q} \n A: {answer}")
-                            
+                                
                             # Store the answer for this question and this chunk
                             self.all_answers[file_name][q][f"chunk_{chunk_index+1}"] = answer
-                            
-                            # Add the assistant's answer back to the conversation to maintain context
-                            conversation.append({"role": "assistant", "content": answer})
                             
                             time.sleep(0.1)
                             break  # Exit the loop if successful
                         
                         #Handle Exceptions
                         except Exception as e:
-                            if type(e).__name__ == 'RateLimitError':
-                                print(f"Rate limit error: {e}. Retrying... ({retry_count+1})")
-                                retry_count += 1
-                                time.sleep(30)
-                            else:
-                                print(f"An error occurred: {e}. Retrying... ({retry_count+1})")
-                                retry_count += 1
-                                time.sleep(5)
-                                            
-                    if retry_count == 3:
-                        self.all_answers[file_name][q][f"chunk_{chunk_index+1}"] = "Unidentified"
+                            if retry_count == 3:
+                                print(f"Exceeded 3 attempts due to error: \n {e}")
+                                self.all_answers[file_name][q][f"chunk_{chunk_index+1}"] = "Unidentified"
+                            retry_count, sleep_time = self.handle_response_exception(e, q_index, retry_count)
+                            time.sleep(sleep_time)
+
             if self.test_mode:
-                print(f'{response["usage"]["total_tokens"]} tokens counted by the OpenAI API. Estimated cost: {float(response["usage"]["total_tokens"])/1000*0.03}')
+                print(f'{tokens_used} tokens counted by the OpenAI API. Estimated cost per article: {tokens_used*self.cost*len(self.questions.items())}')
         return self.all_answers
-        
-    def send_to_openai(self, chunks):
-        """
-        Sends text chunks to OpenAI for evaluation.
-        
-        Parameters:
-        - chunks (list): List of text chunks to evaluate.
-        
-        Returns:
-        - list: List of answers received from OpenAI.
-        """
-        answers = []
-        for chunk in chunks:
-            prompt = f"Text Chunk: {chunk}\n{self.questions}"
 
-            try:
-                response = openai.Completion.create(
-                    engine="gpt-3.5-turbo-16k",
-                    prompt=prompt,
-                    max_tokens=self.answer_token  # Adjust as needed
-                )
-                decision_text = response.choices[0].text.strip()
-                answers.append(decision_text)
-
-            except Exception as e:
-                print(f"An error occurred during response handling: {e}")
-                answers.append("Unidentified")
-
-        return answers
-    
     def save_to_json(self, output_dict):
         """
         Saves the labeled sections to a JSON file.
@@ -376,9 +419,85 @@ class OpenAIChatEvaluator(OpenAIEvaluator):
         - None
         """
         # Create a new directory in the same root folder
-        out_dir = os.path.join(os.path.dirname(self.json_path), "text_evaluations")
+        out_dir = os.path.join(os.path.dirname(self.json_path), '..', f"{self.dir}")
         os.makedirs(out_dir, exist_ok=True)
         
         # Save the dictionary to a JSON file
-        with open(os.path.join(out_dir, f'{self.question_type}_evaluations.json'), 'w') as f:
-            json.dump(output_dict, f, indent=4)
+        save_file = os.path.join(out_dir, f'{self.question_type}_evaluations.json')
+        with open(save_file, 'w') as f:
+            json.dump(output_dict, f, indent=0)
+        return save_file
+    
+class CaseReportLabeler(OpenAIChatEvaluator):
+    def __init__(self, api_key_path, text, questions, section_headers):
+        self.text = text
+        self.section_headers = section_headers
+        super().__init__(api_key_path, 
+                         json_file_path=None, 
+                         keys_to_consider=None, 
+                         question_type="labelling", 
+                         question=questions, 
+                         model_choice="gpt3_small",
+                         debug=False, 
+                         test_mode=False)
+
+
+    def extract_relevant_text(self):
+        self.relevant_text_by_file = {"file_1": self.text}
+
+    def read_json(self, json_file_path=None):
+        """
+        Overrides read_json method in parent class.
+        """
+        return {}
+    
+    def evaluate_all_files(self):
+        """
+        Evaluates all the text files to categorize text chunks based on the answers to questions.
+
+        Returns:
+        - results_dict (dict): Dictionary containing text chunks categorized under keys from section_headers.
+        """
+        results_dict = {'case_report': [], 'other': []}
+        acceptable_case_answers = self.section_headers.get('Case_Report', [])
+        
+        for file_name, selected_text in tqdm(self.relevant_text_by_file.items()):
+            # Chunk text by token limits
+            chunks = self.call_chunker(selected_text)
+            
+            # Send a query for each chunk
+            for chunk_index, chunk in enumerate(chunks):
+                # Initialize a conversation with OpenAI for this chunk
+                for q_index, q in enumerate(self.questions.keys()):
+                    
+                    # Generate the conversation to submit
+                    conversation = self.generate_submission(chunk, q)
+                    
+                    # Use a while loop to allow 3 submission attempts
+                    retry_count = 0
+                    while retry_count < 3:
+                        try:
+                            answer, tokens_used = self.get_response_from_openai(conversation)
+                            
+                            # Store the answer and the corresponding chunk
+                            if answer.lower() in acceptable_case_answers:
+                                results_dict['case_report'].append(chunk)
+                            else:
+                                results_dict['other'].append(chunk)
+                            
+                            time.sleep(0.1)
+                            break  # Exit the loop if successful
+                        
+                        # Handle Exceptions
+                        except Exception as e:
+                            retry_count, sleep_time = self.handle_response_exception(e, q_index, retry_count)
+                            time.sleep(sleep_time)
+                
+                    if retry_count == 3:
+                        results_dict['other'].append(f"Unidentified: chunk_{chunk_index+1}")
+        # Join strings together and return the completed results
+        results_dict['case_report'] = ' '.join(results_dict['case_report'])
+        results_dict['other'] = ' '.join(results_dict['other'])
+        return results_dict
+
+
