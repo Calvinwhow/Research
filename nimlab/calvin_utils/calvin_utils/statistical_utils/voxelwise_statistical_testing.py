@@ -7,7 +7,7 @@ import statsmodels.formula.api as smf
 from statsmodels.stats.diagnostic import het_breuschpagan
 from scipy.stats import chi2, t, f
 
-from scipy.stats import pearsonr
+from scipy.stats import spearmanr, pearsonr
 from tqdm import tqdm
 import numpy as np
 import pandas as pd 
@@ -447,7 +447,7 @@ def voxelwise_interaction_f_stat(outcome_df, predictor_neuroimaging_dfs, predict
     else:
         return results_df['statistic'], results_df, temp_df
 
-def generate_r_map(matrix_df, mask_path=None):
+def generate_r_map(matrix_df, mask_path=None, method='pearson'):
     '''
     This function receive a dataframe which contains clinical outcomes in the first column, 
     and connectivity values of voxels in the proceeding columns.
@@ -471,7 +471,13 @@ def generate_r_map(matrix_df, mask_path=None):
     r_list = []
     p_list = []
     for i in tqdm(range(0, matrix_df.shape[1])):
-        r, p = pearsonr(outcomes_df, np.abs(matrix_df.iloc[:,i]))
+        if method=='pearson':
+            r, p = pearsonr(outcomes_df, np.abs(matrix_df.iloc[:,i]))
+        elif method=='spearman':
+            r, p = spearmanr(outcomes_df, np.abs(matrix_df.iloc[:,i]))
+        else:
+            raise ValueError("Invalid method. Choose either 'spearman' or 'pearson'.")
+            
         r_list.append(r)
         p_list.append(p)
         
