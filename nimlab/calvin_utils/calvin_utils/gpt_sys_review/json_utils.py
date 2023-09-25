@@ -501,6 +501,17 @@ class CustomSummarizer(InclusionExclusionSummarizer):
                     else:
                         valid_answers = [x for x in mapped_answers if x is not np.nan and x is not None]
                         summary_dict[article][question] = np.sum(valid_answers) if valid_answers else 'Unidentified'
+                elif self.keyword_mapping is None:
+                    try:
+                        combined_answers = tuple(chunks.values())
+                        if not combined_answers:
+                            summary_dict[article][question] = 'No Answers'
+                        else:
+                            summary_dict[article][question] = combined_answers
+                    except Exception as e:
+                        summary_dict[article][question] = f'Error: {str(e)}'
+                else:
+                    raise ValueError("Unacceptable keyword mapping value.")
         df = pd.DataFrame.from_dict(summary_dict, orient='index').fillna(np.nan)
         return df
     
