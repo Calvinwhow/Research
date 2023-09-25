@@ -25,7 +25,7 @@ class TextPreprocessor:
         - output_dir (str): Path to the directory where the preprocessed text files will be saved.
         """
         self.input_dir = input_dir
-        self.output_dir = os.path.join(input_dir, 'preprocessed')
+        self.output_dir = os.path.join(input_dir, '..', 'preprocessed')
 
     @staticmethod
     def preprocess_text(text):
@@ -69,7 +69,8 @@ class TextPreprocessor:
         for filename in os.listdir(self.input_dir):
             if filename.endswith('.txt'):
                 input_filepath = os.path.join(self.input_dir, filename)
-                output_filepath = os.path.join(self.output_dir, filename)
+                
+                output_filepath = os.path.join(self.output_dir, filename) #<-- edit
                 
                 # Read the original text
                 with open(input_filepath, 'r', encoding='utf-8') as input_file:
@@ -82,6 +83,7 @@ class TextPreprocessor:
                 # Save the preprocessed text
                 with open(output_filepath, 'w', encoding='utf-8') as output_file:
                     output_file.write(cleaned_text)
+        return self.output_dir
 
 class TextChunker:
     """

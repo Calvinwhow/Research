@@ -30,7 +30,7 @@ class SectionLabeler:
     - save_to_json: Saves the labeled sections to a JSON file.
     """
 
-    def __init__(self, folder_path, article_type, api_key_path=None, test_mode=True):
+    def __init__(self, folder_path, article_type, api_key_path=None):
         """
         Initializes the SectionLabeler class with the folder path and article type.
 
@@ -44,7 +44,6 @@ class SectionLabeler:
         self.folder_path = folder_path
         self.article_type = article_type
         self.chunker = None
-        self.test_mode = test_mode
 
     def select_labels(self):
         # Define section labels for each article type
@@ -58,7 +57,7 @@ class SectionLabeler:
             "Conclusion": ["Conclusion", "Summary"],
             "References": ["References", "Bibliography", "Citations"]
             }
-        if self.article_type == "case":
+        elif self.article_type == "case":
             self.section_headers = {
             "Case_Report": ["yes", "y", "positive", "correct"]
             }
@@ -165,7 +164,7 @@ class SectionLabeler:
             print(f"Warning: High number of characters missed ({len(residual_text)}), please investigate manually.")
             if show_residuals:
                 print(residual_text)
-            return labeled_sections, residual_text
+        return labeled_sections, residual_text
         
     def process_files(self):
         """
@@ -188,7 +187,7 @@ class SectionLabeler:
                     labeled_sections, text = self.label_text(text)
                 elif self.article_type == 'case':
                     questions = self.get_questions()
-                    evaluator = CaseReportLabeler(api_key_path=self.api_key_path, text=text, questions=questions, section_headers=self.section_headers, test_mode=self.test_mode)
+                    evaluator = CaseReportLabeler(api_key_path=self.api_key_path, text=text, questions=questions, section_headers=self.section_headers)
                     labeled_sections = evaluator.evaluate_all_files()
                 else:
                     raise ValueError(f"Unknown article type {self.article_type}, choose case or research")
@@ -208,7 +207,7 @@ class SectionLabeler:
         - None
         """
         # Create a new directory in the same root folders
-        out_dir = os.path.join(os.path.dirname(self.folder_path), '..', 'labeled_text')
+        out_dir = os.path.join(self.folder_path, '..', 'labeled_text')
         os.makedirs(out_dir, exist_ok=True)
         save_file_path = os.path.join(out_dir, f'{self.article_type}_labeled_sections.json')
         with open(save_file_path, 'w') as f:
@@ -315,17 +314,17 @@ class InclusionExclusionSummarizer:
     - df (DataFrame): Pandas DataFrame to store summarized results.
     """
     
-    def __init__(self, json_path, acceptable_strings=["good", "excellent", "positive", "y", "yes", "correct"]):
+    def __init__(self, json_path, acceptable_strings=["good", "excellent", "positive", " y " " y.", "yes", "correct", "is likely", "is possible", "is probable"]):
         """
         Initializes the InclusionExclusionSummarizer class.
         
         Parameters:
         - json_path (str): Path to the JSON file containing the answers.
         """
+        self.acceptable_strings = acceptable_strings
         self.json_path = json_path
         self.data = self.read_json()
         self.df = self.summarize_results()
-        self.acceptable_strings = acceptable_strings
 
     
     def read_json(self):

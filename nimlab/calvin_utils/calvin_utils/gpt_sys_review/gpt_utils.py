@@ -223,15 +223,15 @@ class OpenAIChatEvaluator(OpenAIEvaluator):
         Sets the manner in which directives and questions are posed to the model.
         """
         if self.question_type=="research":
-            self.directive = "You are a research assistant. Your task is to carefully evaluate the following research report. Use both explicit information and reasonable inferences to answer the questions."
+            self.directive = "You are a research assistant. Your task is to carefully evaluate the following research report. Use both explicit information and reasonable inferences to answer the questions. Be as concise as possible."
             self.chunk_flag = "[RESEARCH REPORT]"
             self.dir = "research_extractions"
         elif self.question_type=="case":
-            self.directive = "You are a medical assistant. Your task is to carefully evaluate the following case report. Use both explicit information and reasonable inferences to answer the questions."
+            self.directive = "You are a medical assistant. Your task is to carefully evaluate the following case report. Use both explicit information and reasonable inferences to answer the questions. Be as concise as possible."
             self.chunk_flag = "[CASE REPORT]"
             self.dir = "case_extractions"
         elif self.question_type=="labelling":
-            self.directive = "You are a text labelling assistant. Your task is to carefully evaluate the following case report. Use both explicit information and reasonable inferences to answer the questions."
+            self.directive = "You are a text labelling assistant. Your task is to carefully evaluate the following case report. Use both explicit information and reasonable inferences to answer the questions. Be as concise as possible."
             self.chunk_flag = "[SEGMENT]"
             self.dir = "labelling_extractions"
             self.token_limit = 500
@@ -407,7 +407,7 @@ class OpenAIChatEvaluator(OpenAIEvaluator):
                                 time.sleep(sleep_time)
 
                 if self.test_mode:
-                    print(f'{tokens_used} tokens counted by the OpenAI API. Estimated cost per article: {tokens_used*self.cost*len(self.questions.items())}')
+                    print(f'{tokens_used} tokens counted by the OpenAI API. Estimated cost per article: {tokens_used*self.cost*len(self.questions.items())*len(chunks)}')
             return self.all_answers
         except KeyboardInterrupt:
             print("KeyboardInterrupt detected. Saving results and closing.")
