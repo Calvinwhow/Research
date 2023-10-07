@@ -4,6 +4,53 @@ import os
 import pandas as pd
 from pathlib import Path
 
+def glob_multiple_file_paths(dir_pattern_dict: dict, save: bool=False, save_path: str=None) -> pd.DataFrame:
+    """
+    Searches for files in multiple directories based on a dictionary of root directories and file patterns,
+    then returns a DataFrame containing all the file paths.
+    
+    Parameters:
+    -----------
+    dir_pattern_dict : dict
+        Dictionary where keys are root directories and values are file patterns to match.
+    save : bool
+        Whether to save the DataFrame as a CSV.
+    save_path : str
+        The path where to save the CSV file. If None, it will be saved in the current directory.
+        
+    Returns:
+    --------
+    pd.DataFrame
+        DataFrame containing all the file paths.
+    """
+    master_df = pd.DataFrame()
+    
+    for root_dir, file_pattern in dir_pattern_dict.items():
+        glob_path = os.path.join(root_dir, file_pattern)
+        globbed = glob(glob_path)
+        temp_df = pd.DataFrame({'paths': globbed})
+        
+        master_df = pd.concat([master_df, temp_df], ignore_index=True)
+        
+    if save:
+        if save_path is None:
+            save_path = 'master_path_df.csv'
+        master_df.to_csv(save_path, index=False)
+        print(f'Saved path: {save_path}')
+    
+    return master_df
+
+# Example usage:
+if __name__=='__main__':
+    dir_pattern_dict = {
+        '/path/to/first/root_dir': '*.nii',
+        '/path/to/second/root_dir': '*.nii.gz'
+        # Add more root_dir: file_pattern pairs
+    }
+    
+    master_df = glob_multiple_file_paths(dir_pattern_dict, save=True, save_path='master_file_paths.csv')
+
+
 def glob_file_paths(shared_base_path, shared_file_pattern='', save=False):
     glob_path  = os.path.join(shared_base_path, shared_file_pattern)
     

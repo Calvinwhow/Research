@@ -94,6 +94,7 @@ def save_dataframes_to_csv(outcome_dfs, covariate_dfs, voxelwise_dfs, path_to_da
 
     return paths
 
+
 def preprocess_colnames_for_regression(data_df):
     data_df = column_names_to_str(data_df)
     data_df = remove_column_spaces(data_df)
