@@ -1,8 +1,20 @@
-import scipy.stats as st
 import numpy as np
-from nibabel.affines import apply_affine
-from nimlab import datasets as nimds
+import pandas as pd
+import scipy.stats as st
+from scipy.stats import zscore
+from scipy.stats import t, norm
 from nilearn import image, plotting 
+from nimlab import datasets as nimds
+from nibabel.affines import apply_affine
+
+def handle_special_values(df):
+    '''
+    A quick and easy way of handling nans and inifinities in your data without significantly biasing the distribution.
+    '''
+    max_val = df.replace([np.inf, -np.inf], np.nan).max().max()
+    min_val = df.replace([np.inf, -np.inf], np.nan).min().min()
+    df = pd.DataFrame(np.nan_to_num(df.to_numpy(), nan=0.0, posinf=max_val, neginf=min_val), columns=df.columns)
+    return df
 
 def import_nifti_to_numpy_array(filepath):
     '''
@@ -194,25 +206,75 @@ def dice_coefficient(df1: pd.DataFrame, df2: pd.DataFrame) -> float:
     
     return dice_coefficient
 
-import numpy as np
-def fisher_z_transform(matrix):
-    print('--------------------------------Performing fisher z_score-------------------------')
-    print('pre fisher z score max: ', np.max(matrix), np.shape(matrix))    
+def t_to_z_array(t_values, N=None):
+    """
+    Convert an array of t-scores to z-scores using the inverse of the cumulative distribution function (CDF).
+    
+    Parameters:
+    - t_values: numpy.ndarray
+        Array of t-scores to be converted.
+    - N: int, optional
+        Number of samples from which the t-scores were derived. 
+        
+    Returns:
+    - z_values: numpy.ndarray
+        Array of converted z-scores.
+        
+    The function first calculates the p-values from the t-scores using the CDF of the t-distribution with
+    specified degrees of freedom (df). These p-values represent the area under the curve of the t-distribution
+    to the left of each t-score. Then, the p-values are converted to z-scores using the quantile function 
+    (Percent-Point Function, PPF) of the standard normal distribution. The PPF is the inverse of the CDF and 
+    gives the z-score that corresponds to each p-value.
+    
+    Note 1: This conversion is specific to statistical t-tests and should not be confused with psychometric 
+    conversions of t-scores (e.g., T = 50 + 10Z), which are scaled differently.
+    
+    Note 2: This function does not perform the classical z-score normalization (subtract mean and divide by 
+    standard deviation) across the entire DataFrame. Classical z-scoring is not applicable here because the 
+    data comes from a t-distribution, not a normal distribution.
+    
+    This function is designed to be fast for large arrays, such as those found in neuroimaging (NIfTI files),
+    where element-wise application of the conversion would be too slow.
+    """
+    if N is not None:
+        df = N - 1  # Calculate degrees of freedom if N is provided
+    else:
+        raise ValueError("Either df or N must be provided.")
+        
+    p_values = t.cdf(t_values, df)  # Compute p-values using the CDF of the t-distribution
+    z_values = norm.ppf(p_values)  # Convert p-values to z-scores using the PPF (inverse CDF) of the standard normal distribution
+    
+    return z_values
+
+def convert_dataframe_t_to_z(df, sample_size=None):
+    '''
+    A function to convert T Score to Z scores.
+    
+    This works out the p-value of the corresponding T-Score by considering it's distribution. 
+    To consider the T distribution, we use the sample size used to derive the T score. 
+    Given the p-value derived from the T-distribution, we can calculate the corresponding Z score from the inverse CDF.
+    '''
+    z_scored_array = t_to_z_array(df, N=sample_size)
+    df = pd.DataFrame(z_scored_array, columns=df.columns)
+    return df
+
+def fisher_z_transform(matrix, silent=True):
+    if not silent:
+        print('--------------------------------Performing fisher z_score-------------------------')
+        print('pre fisher z score max: ', np.max(matrix), np.shape(matrix))    
     rfz_matrix = np.arctanh(matrix)
-    print('post fisher z score max: ', np.max(rfz_matrix), np.shape(rfz_matrix))
+    if not silent:
+        print('post fisher z score max: ', np.max(rfz_matrix), np.shape(rfz_matrix))
     return rfz_matrix
 
-from scipy.stats import zscore
-def z_score_matrix(matrix):
-    print('--------------------------------Performing z_score--------------------------------')
-    print('pre z score max: ', np.max(matrix), np.shape(matrix))
+def z_score_matrix(matrix, silent=True):
+    if not silent:
+        print('--------------------------------Performing z_score--------------------------------')
+        print('pre z score max: ', np.max(matrix), np.shape(matrix))
     z_matrix = zscore(matrix)
-    z_matrix = np.nan_to_num(np.nan_to_num(z_matrix, nan=0, posinf=0, neginf=0))
-    print('post z score max: ', np.max(z_matrix), np.shape(z_matrix))
+    if not silent:
+        print('post z score max: ', np.max(z_matrix), np.shape(z_matrix))
     return z_matrix
-
-import pandas as pd
-import numpy as np
 
 def dice_coefficient(df1: pd.DataFrame, df2: pd.DataFrame) -> float:
     '''

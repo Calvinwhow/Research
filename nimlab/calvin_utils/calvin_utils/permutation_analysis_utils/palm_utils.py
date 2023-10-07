@@ -12,6 +12,7 @@ from time import time
 import subprocess
 import getpass
 from termcolor import cprint
+import nibabel as nib
 from nilearn import image
 from nimlab import datasets as ds
 from nimlab import configuration as config
@@ -290,6 +291,882 @@ class PalmPreparation:
             
     def calvins_call_palm(
         self, input_imgs, design_matrix, contrast_matrix, working_directory=None, output_directory=None, iterations=10000, voxelwise_evs=None,
+        eb=None, mask="", save_1p=True, logp=False, tfce=False, ise_flag=False,
+        two_tailed_flag=True, corrcon_flag=False, fdr_flag=False, accel="", cluster_name="",
+        username="", cluster_email="", queue="normal", cores=1, memory=6000,
+        dryrun=False, job_name="", job_time="", num_nodes="", num_tasks="", x11_forwarding="",
+        service_class="", debug=False,extra="",
+        ):
+        
+        """Call FSL PALM https://github.com/andersonwinkler/PALM
+
+        Parameters
+        ----------
+        input_imgs : list of Nifti-like objects
+            Input images to give to PALM. Typically network maps
+        design_matrix : pd.DataFrame
+            Design matrix
+        contrast_matrix : pd.DataFrame
+            Contrast matrix
+        working_directory : str
+            Path to working directory where PALM config files are written
+        output_directory : str
+            Path to output directory
+        iterations : int
+            Number of permutations to run
+        voxelwise_evs : list of tuples
+            Each tuple contains: 
+                file: The file with one voxelwise EV.
+                evpos: The column number (position) of this EV in the design matrix.
+        eb : pd.DataFrame, optional
+            Dataframe specifying exchangeability block membership. Defaults to None
+        mask : str
+            Path to mask file. Defaults to "MNI152_T1_2mm_brain_mask_dil" provided
+            by nimlab.datasets
+        save_1p : bool
+            Save p values as 1 - p. Defaults to True.
+        logp : bool
+            -logp
+            Save the output p-values as -log10(p). Defaults to False
+        tfce : bool
+            Generate tfce output. Defaults to False.
+        ise_flag : bool
+            Generate ISE output. Defaults to False
+        two_tailed_flag : bool
+            Run as two tailed test. Defaults to True.
+        corrcon_flag : bool
+            Multiple comparisons correction across contrasts. Defaults to False.
+        fdr_flag : bool
+            Generate FDR output. Defaults to False.
+        accel : str
+            Acceleration method. Defaults to none.
+        cluster_submit : str
+            Specify cluster to submit job to, if any. Current options are "erisone, dryrun, eristwo".
+        cluster_user: str
+            Username on cluster
+        Returns
+        -------
+        None
+
+        """
+        # prep folders
+        working_directory = os.path.join(self.out_dir, "palm_config")
+        if not os.path.exists(working_directory):
+            os.makedirs(working_directory)
+            
+        output_directory = os.path.join(self.out_dir, "palm_results")
+        if not os.path.exists(output_directory):
+            os.makedirs(output_directory)
+            
+            
+        config.verify_software(["palm_path"])
+        # Concatenate input files
+        print("concatenating input...")
+        concat_file = os.path.abspath(working_directory) + "/concat.nii"
+        image.concat_imgs(input_imgs).to_filename(concat_file)
+        output_directory
+        # Create and convert design and contrast matrices
+        design_matrix_file = working_directory + "/design.mat"
+        contrast_matrix_file = working_directory + "/contrast.con"
+        design_matrix.to_csv(
+            working_directory + "/design.tsv", header=False, index=False, sep="\t"
+        )
+        contrast_matrix.to_csv(
+            working_directory + "/contrast.tsv", header=False, index=False, sep="\t"
+        )
+        self.text2vest(working_directory + "/design.tsv", design_matrix_file)
+        self.text2vest(working_directory + "/contrast.tsv", contrast_matrix_file)
+        if mask == "":
+            mask_file = working_directory + "/" + self.DEFAULT_MASK + ".nii"
+            ds.get_img(self.DEFAULT_MASK).to_filename(mask_file)
+            mask = mask_file
+
+        # Create exchangeability blocks
+        if eb is not None:
+            eb_file = working_directory + "/eb.csv"
+            eb.to_csv(eb_file, header=False, index=False)
+
+        # Required argument
+        palm_cmd = [
+            f"{config.software['palm_path']}/palm",
+            "-i",
+            os.path.abspath(concat_file),
+            "-o",
+            os.path.abspath(output_directory) + "/",
+            "-d",
+            os.path.abspath(design_matrix_file),
+            "-t",
+            os.path.abspath(contrast_matrix_file),
+            "-n",
+            str(iterations),
+            "-m",
+            os.path.abspath(mask),
+        ]
+
+        # Optional arguments
+        if eb is not None:
+            palm_cmd += ["-eb", os.path.abspath(eb_file), "-vg", "auto"]
+        if save_1p:
+            palm_cmd += ["-save1-p"]
+        if logp:
+            palm_cmd += ["-logp"]
+        if tfce:
+            palm_cmd += ["-T"]
+        if ise_flag:
+            palm_cmd += ["-ise"]
+        if two_tailed_flag:
+            palm_cmd += ["-twotail"]
+        if corrcon_flag:
+            palm_cmd += ["-corrcon"]
+        if fdr_flag:
+            palm_cmd += ["-fdr"]
+        if accel:
+            palm_cmd += ["-accel", accel]
+        # Add -evperdat argument for voxelwise EVs
+        if voxelwise_evs is not None:
+            for voxelwise_ev in voxelwise_evs:
+                file, evpos = voxelwise_ev
+                palm_cmd += ["-evperdat", file, str(evpos)]
+        
+        print("Calling PALM with following command:")
+        print(" ".join(palm_cmd))
+        start = time()
+        if cluster_name == "":
+            cmd = palm_cmd
+        else:
+            cmd = self.build_cluster_submit_string(
+                directory=output_directory,
+                cluster_name=cluster_name,
+                username=username,
+                cmd=palm_cmd,
+                dryrun=dryrun,
+                queue=queue,
+                cores=cores,
+                memory=memory,
+                job_name=job_name,
+                job_time=job_time,
+                num_nodes=num_nodes,
+                num_tasks=num_tasks,
+                x11_forwarding=x11_forwarding,
+                service_class=service_class,
+                cluster_email=cluster_email,
+                debug=debug,
+                extra=extra,
+            )
+
+        if not dryrun:
+            ipython = get_ipython()
+            ipython.system(" ".join(cmd))
+        end = time()
+
+        print("\n")
+
+        print("Time elapsed: " + str(round(end - start)) + " seconds")
+        
+
+class PalmDesignMatrix(PalmPreparation):
+    '''
+    This is a class to perform complex PALM analyses
+    '''
+    def __init__(self, out_dir, path_to_clinical_data, subject_id_column):
+        super().__init__(out_dir=out_dir)
+        self.path_to_clinical_data = path_to_clinical_data
+        self.subject_id_column = subject_id_column
+        self.clinical_df = pd.read_csv(self.path_to_clinical_data)
+        self.design_matrix = None
+        self.updated_design_matrix = None
+        self.nifti_design_matrix = None
+        self.interaction_design_matrix = None
+        self.final_design_matrix = None
+        self.dependent_df = None
+        self.ordered_image_list = None
+
+    def create_design_matrix(self, formula_vars):
+        self.design_matrix = super().create_design_matrix(
+            formula_vars=formula_vars,
+            data_df=self.clinical_df,
+            subject_id_column=self.subject_id_column
+        )
+
+    def update_design_matrix_with_nifti(self, nifti_path_dictionary):
+        self.updated_design_matrix = self.design_matrix.copy()
+        for k, v in nifti_path_dictionary.items():
+            nifti_df, _ = super().process_nifti_paths(csv_file_path=v)
+            nifti_df.rename(columns={'nifti_path': k}, inplace=True)
+            nifti_df.set_index('subject_id', inplace=True, drop=True)
+            nifti_df.index = nifti_df.index.astype(int)
+            self.updated_design_matrix = self.updated_design_matrix.merge(nifti_df, left_index=True, right_index=True)
+
+    @staticmethod
+    def import_matrices_from_df_series(df_series):
+        """
+        Import matrices from a DataFrame series containing file paths to Nifti files.
+
+        Parameters:
+        - df_series: pd.Series containing file paths to Nifti files.
+
+        Returns:
+        - matrix_df: pd.DataFrame containing flattened Nifti data.
+        """
+        matrix_df = pd.DataFrame({})
+        for index, row in df_series.iterrows():
+            file_path = row.values[0]
+            if not os.path.exists(file_path):
+                print(f"File not found: {file_path}")
+                continue
+            img = image.load_img(file_path)
+            data = img.get_fdata()
+            data = np.nan_to_num(data, nan=0, posinf=0, neginf=0)
+            name = index
+            matrix_df[name] = data.flatten()
+        return matrix_df
+
+    def generate_4d_explanatory_variable_niftis(self, mask_img):
+        """
+        Generate 4D Nifti files for each explanatory variable in the design matrix.
+
+        Parameters:
+        - mask_img: Nifti-like object for the mask.
+
+        Returns:
+        - nifti_design_matrix_dict: Dictionary containing paths to generated 4D Nifti files.
+        """
+        mask_data = mask_img.get_fdata()
+        save_dir = os.path.join(self.out_dir, 'fsl_palm_4d_explanatory_variable_niftis')
+        os.makedirs(save_dir, exist_ok=True)
+        df = self.updated_design_matrix  # Assuming you have updated the design matrix
+
+        nifti_design_matrix_dict = {}
+        for col in df.columns:
+            if os.path.isfile(df[col].values[0]):
+                nifti_imgs = [image.load_img(file_path) for file_path in df[col].values]
+                data_4d = image.concat_imgs(nifti_imgs)
+                data_4d.to_filename(f'{save_dir}/{col}_4D.nii')
+            else:
+                data_4d = np.repeat(mask_data[..., np.newaxis] > 0, len(df), axis=-1) * df[col].values
+                new_img = nib.Nifti1Image(data_4d, mask_img.affine)
+                nib.save(new_img, f'{save_dir}/{col}_4D.nii')
+            nifti_design_matrix_dict[col] = [f'{save_dir}/{col}_4D.nii']
+        return pd.DataFrame(nifti_design_matrix_dict)
+
+    def generate_interaction_design_matrix(nifti_design_matrix, interaction_terms):
+        """
+        Generate a design matrix with interaction terms from a given design matrix and a list of interaction pairs.
+
+        Parameters:
+        nifti_design_matrix (pd.DataFrame): The DataFrame that contains the file paths for each of the variables.
+        interaction_terms (list): A list of tuples where each tuple represents a pair of variables for which an interaction term should be created.
+
+        Returns:
+        nifti_design_matrix_df (pd.DataFrame): A DataFrame where each column represents a variable or interaction term and contains the file path for the corresponding 4D Nifti file.
+        """
+
+        # Create an empty dictionary to store the updated design matrix
+        nifti_design_matrix_dict = nifti_design_matrix.to_dict(orient='list')
+
+        # Iterate over each interaction term
+        for term in interaction_terms:
+            # Each term is a tuple of interacting variables
+            var1, var2 = term
+
+            # Load the corresponding 4D Nifti files
+            img1 = nib.load(nifti_design_matrix.loc[0, var1])
+            img2 = nib.load(nifti_design_matrix.loc[0, var2])
+            save_dir = os.path.dirname(nifti_design_matrix.loc[0, var1])
+
+            # Multiply the images element-wise
+            data_4d = img1.get_fdata() * img2.get_fdata()
+
+            # Save the result to a new Nifti file
+            new_img = nib.Nifti1Image(data_4d, img1.affine)
+            new_img.to_filename(os.path.join(save_dir, f'{var1}_interaction_{var2}_4D.nii'))
+
+            # Add the interaction term to the dictionary
+            nifti_design_matrix_dict[f'{var1}_interaction_{var2}'] = [os.path.join(save_dir, f'{var1}_interaction_{var2}_4D.nii')]
+
+        # Convert the dictionary to a DataFrame
+        nifti_design_matrix_df = pd.DataFrame(nifti_design_matrix_dict)
+        return nifti_design_matrix_df
+
+    def finalize_design_matrix(self, mask_img):
+        # Code to finalize design matrix
+        pass
+
+    def create_dependent_df(self, dependent_variable):
+        # Code to create dependent variable DataFrame
+        pass
+
+    def generate_dependent_variable_niftis(dependent_df, mask_img, out_dir):
+        """
+        Generate 3D NIfTI files for each subject in the dependent variable DataFrame.
+
+        Args:
+            dependent_df (pandas.DataFrame): DataFrame containing the dependent variable values.
+                The DataFrame should have the subject ID as the index and the dependent variable values as a column.
+            mask_img (str): Mask image (NIfTI format) defining the 3D space.
+            save_dir (str): Directory where the generated NIfTI files will be saved.
+
+        Returns:
+            None
+        """
+
+        # Ensure the save directory exists
+        save_dir = os.path.join(out_dir, 'dependent_variable_niftis')
+        os.makedirs(save_dir, exist_ok=True)
+
+        # Load the mask image
+        mask_data = mask_img.get_fdata()
+        ordered_image_list = []
+        # Iterate over each subject in the dependent variable dataframe
+        for subject_id, value in dependent_df.iterrows():
+            # Repeat the dependent variable value across the 3D space defined by the mask
+            data_3d = (mask_data > 0) * value.to_numpy()
+
+            # Create a new NIfTI image
+            new_img = nib.Nifti1Image(data_3d, mask_img.affine)
+
+            # Save the new image to a file
+            output_file = os.path.join(save_dir, f"{subject_id}_3D.nii")
+            ordered_image_list.append(os.path.join(save_dir, f"{subject_id}_3D.nii"))
+            nib.save(new_img, output_file)
+        return ordered_image_list
+
+    def finalize(self):
+        # Code to finalize everything
+        pass
+
+
+import pandas as pd
+import os
+import subprocess
+import numpy as np
+import patsy
+from calvin_utils.file_utils.dataframe_utilities import preprocess_colnames_for_regression
+
+from nilearn import image
+from nimlab import datasets as nimds
+import nibabel as nib
+import numpy as np
+
+class CalvinPalm:
+    """
+    Class for handling PALM analysis workflow.
+    """
+    def __init__(self, input_csv_path, output_dir):
+        """
+        Initialize the CalvinPalm class with input and output paths.
+
+        Parameters:
+        - input_csv_path: str, path to the input CSV file
+        - output_dir: str, path to the output directory
+        """
+        self.input_csv_path = input_csv_path
+        self.output_dir = output_dir
+        self.df = None
+        self.design_matrix = None
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+    
+    def read_data(self):
+        """
+        Reads data from a CSV file and preprocesses the column names for regression.
+
+        Returns:
+        - DataFrame: Preprocessed data read from the CSV file.
+        """
+        df = pd.read_csv(self.input_csv_path)
+        self.df = preprocess_colnames_for_regression(df)
+        return self.df
+    
+    def handle_interactions(self, design_matrix, formula_vars):
+        """
+        Manually handle interaction terms in the DataFrame.
+        """
+        for var in formula_vars:
+            if '*' in var or ':' in var:
+                interacting_vars = var.replace('*', ':').split(':')
+                new_col = design_matrix[interacting_vars].prod(axis=1)
+                design_matrix[var] = new_col
+        return design_matrix
+    
+    def create_design_matrix(self, formula_vars=None, data_df=None, intercept=True):
+        """
+        Create a design matrix based on given formula variables and data.
+
+        Parameters:
+        - formula_vars: List of strings, each representing a variable in the design formula.
+        - data_df: DataFrame, data to create the design matrix from.
+        - intercept: Boolean, whether to add an intercept term if 'intercept' is not in formula_vars.
+
+        Returns:
+        - DataFrame representing the design matrix.
+        """
+        if formula_vars is None:
+            design_matrix = pd.DataFrame({'Intercept': np.ones(len(data_df.index))}, index=data_df.index)
+        else:
+            formula = ' + '.join(formula_vars)
+            design_matrix = patsy.dmatrix(formula, data_df, return_type='dataframe')
+        
+        # Handle intercept
+        if intercept and 'intercept' not in map(str.lower, formula_vars):
+            design_matrix['Intercept'] = 1.0
+            
+        # Handle interactions
+        design_matrix = self.handle_interactions(design_matrix, formula_vars)
+
+        # Set index
+        if 'ID' in data_df.columns:
+            design_matrix.index = data_df['ID']
+        else:
+            design_matrix.index = data_df.index
+        design_matrix.index.rename('id', inplace=True)
+        self.design_matrix = preprocess_colnames_for_regression(design_matrix)
+        return self.design_matrix
+
+    def set_dependent_variable(self, dep_var_column):
+        """
+        Set the dependent variable for the model.
+
+        Parameters:
+        - dep_var_column: String, the column name in the DataFrame that contains the dependent variable (paths to NIFTI files).
+
+        Returns:
+        - Series representing the dependent variable.
+        """
+        if dep_var_column not in self.df.columns:
+            raise ValueError(f"{dep_var_column} is not a valid column in the DataFrame.")
+
+        self.dep_var_series = self.df[dep_var_column]
+        return self.dep_var_series
+
+    def generate_4d_dependent_variable_nifti(self, mask=None, absval=False):
+        """
+        Generate a 4D Nifti file for the dependent variable based on individual Nifti files.
+
+        Parameters:
+        - mask_img: Nifti-like object, the mask image.
+        - absval: Boolean, whether to take the absolute value of the 4D image.
+
+        Returns:
+        - String, the path to the generated 4D Nifti file.
+        """
+        if mask is None:
+            self.mask = mask if mask else "mni_icbm152"
+            mask_img = self.mask.get_img(self.mask)  # Assuming get_img is a method to get the mask
+            
+        if not hasattr(self, 'dep_var_series'):
+            raise AttributeError("Dependent variable not set. Use set_dependent_variable() first.")
+
+        save_dir = os.path.join(self.output_dir, '4d_dependent_variable_nifti')
+        os.makedirs(save_dir, exist_ok=True)
+
+        nifti_imgs = [image.load_img(file_path) for file_path in self.dep_var_series]
+        data_4d = image.concat_imgs(nifti_imgs)
+        
+        if absval:
+            data_4d = image.math_img("np.abs(img)", img=data_4d)
+
+        output_path = os.path.join(save_dir, 'dependent_variable_4D.nii')
+        data_4d.to_filename(output_path)
+
+        return output_path
+
+    def generate_basic_contrast_matrix(self, design_matrix):
+        """
+        Generate a basic contrast matrix based on the design matrix and display it for potential user modification.
+
+        Parameters:
+        - design_matrix: DataFrame, the design matrix.
+
+        Returns:
+        - 2D NumPy array representing the default contrast matrix.
+        """
+        contrast_matrix = np.eye(len(design_matrix.columns), len(design_matrix.columns))
+        for i in range(1, len(contrast_matrix)):
+            contrast_matrix[i, 0] = -1
+        contrast_df = pd.DataFrame(data=contrast_matrix, columns=design_matrix.columns)
+        
+        print("This is a basic contrast matrix set up to evaluate the significance of each variable.")
+        print("Copy it into a cell below and edit it for more control over your analysis.")
+        print(contrast_df)
+        
+        return contrast_matrix, contrast_df
+
+    def finalize_contrast_matrix(self, design_matrix, contrast_matrix):
+        """
+        Save the contrast matrix to a CSV file.
+
+        Parameters:
+        - contrast_matrix: 2D NumPy array, the contrast matrix.
+        - out_dir: String, the output directory.
+        - file_name: String, the name of the CSV file to save.
+
+        Returns:
+        - None
+        """
+        contrast_df = pd.DataFrame(data=contrast_matrix, columns=design_matrix.columns)
+        return contrast_df
+
+
+class CalvinPalmSubmitter:
+    def calvins_call_palm(self, dv_nifti_file_path, design_matrix, contrast_matrix, 
+                        working_directory=None, output_directory=None, iterations=10000,
+                        accel="tail", voxelwise_evs=None, eb=None, mask="", save_1p=True, 
+                        logp=False, tfce=False, ise_flag=False, two_tailed_flag=True,
+                        corrcon_flag=False, fdr_flag=False, cluster_name="",
+                        username="", cluster_email="", queue="normal", cores="1", 
+                        memory="6000", dryrun=False, job_name="", job_time="", 
+                        num_nodes="", num_tasks="", x11_forwarding="", 
+                        service_class="", debug=False, extra=""):
+        """
+        Calls FSL's PALM for permutation-based analysis on a set of neuroimaging data.
+
+        Parameters:
+        - dv_nifti_file_path: str, path to the dependent variable 4D NIFTI file.
+        - design_matrix: pd.DataFrame, the design matrix for the analysis.
+        - contrast_matrix: pd.DataFrame, the contrast matrix for the analysis.
+        ... (rest of the parameters)
+        
+        Returns:
+        - None
+        """
+        # Setup directories
+        working_directory = os.path.join(output_directory, "palm_config")
+        os.makedirs(working_directory, exist_ok=True)
+        output_directory = os.path.join(output_directory, "palm_results")
+        os.makedirs(output_directory, exist_ok=True)
+
+        # Verify software
+        config.verify_software(["palm_path"])
+
+        # Prepare design and contrast matrices
+        design_matrix_file, contrast_matrix_file = self.prepare_matrices(
+            design_matrix, contrast_matrix, working_directory)
+
+        # Prepare mask
+        mask = self.prepare_mask(mask)
+
+        # Prepare exchangeability blocks
+        eb_file = self.prepare_eb(eb, working_directory)
+
+        # Build and run PALM command
+        palm_cmd = self.build_palm_cmd(dv_nifti_file_path, design_matrix_file, contrast_matrix_file,
+                                    mask, eb_file, iterations, accel, save_1p, logp, tfce, ise_flag, 
+                                    two_tailed_flag, corrcon_flag, fdr_flag)
+        self.run_palm_cmd(palm_cmd, output_directory, cluster_name, username, cluster_email, 
+                        queue, cores, memory, dryrun, job_name, job_time, num_nodes, 
+                        num_tasks, x11_forwarding, service_class, debug, extra)
+
+    def text2vest(self, input_file, output_file):
+        """
+        Converts a text file to a FSL VEST file using FSL's Text2Vest utility.
+
+        Parameters:
+        - input_file: str, the path to the input text file.
+        - output_file: str, the path to the output VEST file.
+
+        Returns:
+        - None. An exception is raised if an error occurs.
+        """
+        # Verify if FSL software is available
+        config.verify_software(["fsl_path"])
+
+        # Run Text2Vest using subprocess
+        process = subprocess.Popen(
+            [f"{config.software['fsl_path']}/bin/Text2Vest", input_file, output_file],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+
+        # Capture stdout and stderr
+        stdout, stderr = process.communicate()
+
+        # If stdout is not empty, raise an exception
+        if stdout:
+            raise Exception("Error in text2vest: " + stdout.decode("utf-8"))
+
+
+    def prepare_matrices(self, design_matrix, contrast_matrix, working_directory):
+        """
+        Prepares the design and contrast matrices and converts them into FSL VEST format.
+
+        Parameters:
+        - design_matrix: pd.DataFrame, the design matrix to be used in the analysis.
+        - contrast_matrix: pd.DataFrame, the contrast matrix to be used in the analysis.
+        - working_directory: str, the directory where the converted matrices will be saved.
+
+        Returns:
+        - Tuple containing paths to the design and contrast matrices in FSL VEST format.
+        """
+        # Define file paths
+        design_matrix_file = f"{working_directory}/design.mat"
+        contrast_matrix_file = f"{working_directory}/contrast.con"
+
+        # Save matrices to TSV files
+        design_matrix.to_csv(f"{working_directory}/design.tsv", header=False, index=False, sep="\t")
+        contrast_matrix.to_csv(f"{working_directory}/contrast.tsv", header=False, index=False, sep="\t")
+
+        # Convert TSV files to FSL VEST files using text2vest
+        self.text2vest(f"{working_directory}/design.tsv", design_matrix_file)
+        self.text2vest(f"{working_directory}/contrast.tsv", contrast_matrix_file)
+
+        return design_matrix_file, contrast_matrix_file
+
+
+    def prepare_mask(self, mask, working_directory):
+        """
+        Prepare the mask for PALM analysis. If no mask is provided, it uses a default mask.
+
+        Parameters:
+        - mask: str, the path to the mask file. If empty, a default mask will be used.
+        - working_directory: str, the directory where the default mask file will be saved if used.
+
+        Returns:
+        - str: the path to the mask file to be used in PALM analysis.
+        """
+        if mask == "":
+            mask_file = os.path.join(working_directory, f"MNI152_T1_2mm_brain_mask_dil.nii")
+            ds.get_img("MNI152_T1_2mm_brain_mask_dil").to_filename(mask_file)
+            return mask_file
+        else:
+            mask_file = os.path.join(working_directory, f"{mask}.nii")
+            ds.get_img(mask).to_filename(mask_file)
+            return mask_file
+        
+    def prepare_eb(self, eb, working_directory):
+        """
+        Prepares and saves the exchangeability blocks (eb) to a CSV file.
+
+        Parameters:
+        - eb: pd.DataFrame or None, the exchangeability blocks to be used in the analysis.
+        - working_directory: str, the directory where the eb file will be saved.
+
+        Returns:
+        - str or None: The file path to the saved eb file, or None if eb is not provided.
+        """
+        eb_file = None
+        if eb is not None:
+            eb_file = f"{working_directory}/eb.csv"
+            eb.to_csv(eb_file, header=False, index=False)
+        return eb_file
+
+    def build_palm_cmd(self, concat_file, design_matrix_file, contrast_matrix_file,
+                    mask, eb_file, iterations, accel, save_1p, logp, tfce, ise_flag, 
+                    two_tailed_flag, corrcon_flag, fdr_flag):
+        """
+        Builds the command line command for running PALM based on the provided parameters.
+
+        Parameters:
+        - concat_file: str, path to the 4D Nifti file that contains all the input images.
+        - design_matrix_file: str, path to the design matrix file.
+        - contrast_matrix_file: str, path to the contrast matrix file.
+        - mask: str, path to the mask file.
+        - eb_file: str, path to the exchangeability blocks file.
+        - iterations: int, number of iterations for permutation testing.
+        - accel: str, acceleration method.
+        - save_1p: bool, whether to save 1-p values.
+        - logp: bool, whether to log-transform p-values.
+        - tfce: bool, whether to use TFCE.
+        - ise_flag: bool, whether to perform image-based smoothing.
+        - two_tailed_flag: bool, whether to perform a two-tailed test.
+        - corrcon_flag: bool, whether to correct for contrasts.
+        - fdr_flag: bool, whether to use FDR correction.
+        
+        Returns:
+        - list: A list of command line arguments for running PALM.
+        """
+        palm_cmd = [
+            f"{config.software['palm_path']}/palm",
+            "-i", os.path.abspath(concat_file),
+            "-o", os.path.abspath(self.output_dir) + "/",
+            "-d", os.path.abspath(design_matrix_file),
+            "-t", os.path.abspath(contrast_matrix_file),
+            "-n", str(iterations),
+            "-m", os.path.abspath(mask)
+        ]
+        
+        if eb_file is not None:
+            palm_cmd += ["-eb", os.path.abspath(eb_file), "-vg", "auto"]
+        if save_1p:
+            palm_cmd += ["-save1-p"]
+        if logp:
+            palm_cmd += ["-logp"]
+        if tfce:
+            palm_cmd += ["-T"]
+        if ise_flag:
+            palm_cmd += ["-ise"]
+        if two_tailed_flag:
+            palm_cmd += ["-twotail"]
+        if corrcon_flag:
+            palm_cmd += ["-corrcon"]
+        if fdr_flag:
+            palm_cmd += ["-fdr"]
+        if accel:
+            palm_cmd += ["-accel", accel]
+        
+        return palm_cmd
+
+    def run_palm_cmd(self, palm_cmd, output_directory, cluster_name, username, cluster_email, 
+                    queue, cores, memory, dryrun, job_name, job_time, num_nodes, 
+                    num_tasks, x11_forwarding, service_class, debug, extra):
+        """
+        Executes the PALM command and handles cluster submission if needed.
+
+        Parameters:
+        - palm_cmd: list, the PALM command to run.
+        - output_directory: str, the directory where output should be saved.
+        - cluster_name, username, cluster_email, queue, cores, memory, job_name, job_time, 
+        num_nodes, num_tasks, x11_forwarding, service_class, debug, extra: Various cluster 
+        and job parameters for cluster submission.
+
+        - dryrun: bool, whether to actually run the command or just print it.
+
+        Returns:
+        - None
+        """
+        from time import time
+        print("Calling PALM with the following command:")
+        print(" ".join(palm_cmd))
+        
+        start = time()
+        if cluster_name == "":
+            cmd = palm_cmd
+        else:
+            cmd = self.build_cluster_submit_string(palm_cmd, output_directory, cluster_name, username, 
+                                                cluster_email, queue, cores, memory, job_name, job_time, 
+                                                num_nodes, num_tasks, x11_forwarding, service_class, debug, extra)
+
+        if not dryrun:
+            ipython = get_ipython()
+            ipython.system(" ".join(cmd))
+            
+        end = time()
+        print("\n")
+        print(f"Time elapsed: {round(end - start)} seconds")
+        
+    def build_cluster_submit_string(
+        self,
+        directory,
+        cluster_name,
+        username,
+        cmd,
+        dryrun=False,
+        queue="",
+        cores="",
+        memory="",
+        job_name="",
+        job_time="",
+        num_nodes="",
+        num_tasks="",
+        x11_forwarding="",
+        service_class="",
+        cluster_email="",
+        debug=False,
+        extra="",
+        ):
+        """Build a job submission script to a cluster and returns a command string.
+
+        Args:
+            directory (str): Path to output job script to.
+            cluster_name (str): Name of cluster to submit job to.
+            username (str): Username for ssh login to cluster.
+            cmd (str): Command string to run on cluster.
+            dryrun (bool): If True, does not submit to cluster and prints out submit command. Defaults to False.
+            queue (str): Job queue/partition to submit to.
+            cores (str): Number of requested cores.
+            memory (str): Amount of requested memory (in MB).
+            job_name (str): Job name.
+            job_time (str): Total runtime limit.
+            num_nodes (str): Number of nodes to run on. Typically will be 1.
+            num_tasks (str): Number of tasks to run. Typically will be 1.
+            x11_forwarding (str): Options for X11 forwarding. On LSF will activate -XF flag. On Slurm will enable options for x11 forwarding such as -xf=batch.
+            service_class (str): Service class to run on.
+            cluster_email (str): Email of user for job status notifications.
+            debug (bool): If True, adds debug scripts to job script. Defaults to False.
+            extra (str): If not empty, adds extra scripts to job script.
+
+        Raises:
+            ValueError: Unrecognized cluster
+        """
+
+        if cluster_name in config.clusters.keys():
+            cluster_config = config.clusters[cluster_name]
+            job_script_path = os.path.abspath(
+                os.path.join(directory, f"job_script_{int(time())}.sh")
+            )
+            sshpass_prefix = [
+                "sshpass",
+                "-p",
+                getpass.getpass(prompt="Please type password"),
+                "ssh",
+                username + "@" + cluster_config["hostname"],
+            ]
+
+            if dryrun:
+                print(f"{cluster_config['submit-command']} {job_script_path}")
+
+            else:
+                sshpass_prefix.append("'echo")
+                sshpass_prefix.append('"' + cluster_config["submit-command"])
+                sshpass_prefix.append(job_script_path + '";')
+                sshpass_prefix.append(cluster_config["submit-command"])
+                sshpass_prefix.append(job_script_path + "'")
+
+            job_script = ["#!/bin/bash"]
+            if job_name:
+                job_script.append(cluster_config["job-name"].replace("&", job_name))
+            if queue:
+                job_script.append(cluster_config["queue-name"].replace("&", queue))
+            if num_nodes:
+                job_script.append(cluster_config["num-nodes"].replace("&", num_nodes))
+            if num_tasks:
+                job_script.append(cluster_config["num-tasks"].replace("&", num_tasks))
+            if cores:
+                job_script.append(cluster_config["cores"].replace("&", cores))
+            if memory:
+                job_script.append(cluster_config["memory"].replace("&", memory))
+            job_script.append(cluster_config["standard-output"])
+            job_script.append(cluster_config["error-output"])
+            if job_time:
+                job_script.append(cluster_config["job-time"].replace("&", job_time))
+            if x11_forwarding:
+                job_script.append(
+                    cluster_config["x11-forwarding"].replace("&", x11_forwarding)
+                )
+            if service_class:
+                job_script.append(
+                    cluster_config["service-class"].replace("&", service_class)
+                )
+            if cluster_email:
+                job_script.append(
+                    cluster_config["mail-address"].replace("&", cluster_email)
+                )
+                job_script.append(cluster_config["mail-type"])
+            job_script.append("")
+            job_script.append(cluster_config["environment-setup"])
+            if debug:
+                job_script.append("")
+                job_script.append(cluster_config["debug"])
+            if extra:
+                job_script.append("")
+                job_script.append(extra)
+            job_script.append("")
+            job_script.append(" ".join(cmd))
+            with open(job_script_path, "w") as f:
+                for item in job_script:
+                    f.write("%s\n" % item)
+
+            return sshpass_prefix
+
+        else:
+            raise ValueError(
+                f"Cluster option '{cluster_name}' not recognized! Available options are {list(config.clusters.keys())}"
+            )
+
+    #----------------------------------------------------------------OLD CODE BELOW        
+    def original_call_palm(
+        self, input_imgs, design_matrix, contrast_matrix, working_directory=None, output_directory=None, 
+        iterations=10000, voxelwise_evs=None,
         eb=None, mask="", save_1p=True, logp=False, tfce=False, ise_flag=False,
         two_tailed_flag=True, corrcon_flag=False, fdr_flag=False, accel="", cluster_name="",
         username="", cluster_email="", queue="normal", cores=1, memory=6000,

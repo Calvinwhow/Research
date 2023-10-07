@@ -94,12 +94,27 @@ def save_dataframes_to_csv(outcome_dfs, covariate_dfs, voxelwise_dfs, path_to_da
 
     return paths
 
+def replace_unacceptable_characters(data_df):
+    """
+    This function replaces unacceptable characters in column names with underscores.
+
+    Parameters:
+    - data_df: DataFrame, the DataFrame to modify.
+
+    Returns:
+    - DataFrame with modified column names.
+    """
+    unacceptable_chars = ['-', '#', '%', '(', ')', ' ', ',', ';', '!', '?', '*', '/', ':', '[', ']', '{', '}', '|', '<', '>', '+', '=', '@', '&', '^', '`', '~']
+    for char in unacceptable_chars:
+        data_df.columns = [col.replace(char, '_') for col in data_df.columns]
+    return data_df
 
 def preprocess_colnames_for_regression(data_df):
     data_df = column_names_to_str(data_df)
     data_df = remove_column_spaces(data_df)
     data_df = add_prefix_to_numeric_cols(data_df)
     data_df = replace_hyphens(data_df)
+    data_df = replace_unacceptable_characters(data_df)
     return data_df
 
 def extract_and_rename_subject_id(dataframe, split_command_dict):
