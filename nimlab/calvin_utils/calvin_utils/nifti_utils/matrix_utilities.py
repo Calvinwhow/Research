@@ -284,11 +284,33 @@ def mask_matrix(df_1, mask_path=None, mask_threshold=0.2, mask_by='rows'):
     print('Dataframes have been masked such that their shapes are: ', df_1.shape)
     return df_1
 
-import nibabel as nib
-from nilearn import image
-from nimlab import datasets as nimds
-import numpy as np
-import pandas as pd
+def apply_mask_to_dataframe(merged_df, mask_path=None):
+    """
+    Apply a mask to a dataframe using either a provided mask or the default MNI ICBM152 mask.
+    
+    Parameters:
+    - merged_df (DataFrame): The dataframe to which the mask should be applied.
+    - mask_path (str, optional): The path to the mask image. If not provided, the MNI ICBM152 mask will be used.
+    
+    Returns:
+    - DataFrame: The masked dataframe containing only the rows specified by the mask.
+    
+    Example usage:
+    >>> masked_df = apply_mask_to_dataframe(merged_df, mask_path=None)
+    """
+    
+    # Load the mask data based on the provided mask_path or use default mask
+    if mask_path is not None:
+        brain_indices = np.where(image.load_img(mask_path).get_fdata().flatten() > 0)[0]
+    else:
+        mni_mask = nimds.get_img("mni_icbm152")
+        mask_data = mni_mask.get_fdata().flatten()
+        brain_indices = np.where(mask_data > 0)[0]
+    
+    # Apply the mask to the dataframe
+    masked_df = merged_df.iloc[brain_indices]
+    
+    return masked_df
 
 def mask_matrix(df_1, mask_path=None, mask_threshold=0.2, mask_by='rows', dataframe_to_mask_by=None):
     '''
@@ -366,9 +388,7 @@ def unmask_matrix(df_1, mask_path=None, mask_threshold=0.2, unmask_by='rows', da
         if mask_path is None:
             mask = nimds.get_img("mni_icbm152")
             mask_data = mask.get_fdata().flatten()
-            print(mask_data.shape)
             brain_indices = np.where(mask_data > 0)[0]
-            print(brain_indices)
         else:
             mask = image.load_img(mask_path)
             mask_data = mask.get_fdata().flatten()
@@ -387,9 +407,49 @@ def unmask_matrix(df_1, mask_path=None, mask_threshold=0.2, unmask_by='rows', da
     print('Data has been unmasked to shape: ', unmasked_df.shape)
     return unmasked_df
 
-import pandas as pd
-import numpy as np
-import nibabel as nib
+
+def unmask_matrix_v2(df_1, mask_path=None, mask_threshold=0, dataframe_to_unmask_by=None):
+    """
+    Unmasks a matrix (given as a dataframe) back into its original full-brain form.
+
+    Parameters:
+    df_1 (DataFrame or list): The dataframe to unmask. Each NIFTI file should be in a column (by convention).
+    mask_path (str, optional): Path to the mask NIFTI file. Default is MNI152 if None.
+    mask_threshold (float, optional): Threshold for the mask values. Default is 0. Use 0.2 for tissue segment masks.
+    dataframe_to_unmask_by (DataFrame, optional): If provided, will use this dataframe to create the mask.
+
+    Returns:
+    DataFrame: The unmasked matrix as a dataframe.
+
+    Note:
+    By convention, each NIFTI file is assumed to be a column in the dataframe.
+    """
+
+    if isinstance(df_1, pd.DataFrame) is False:
+        df_1 = pd.DataFrame(df_1)
+        
+    # Determine the mask and its indices
+    if dataframe_to_unmask_by is not None:
+        mask = dataframe_to_unmask_by.copy()
+        mask['mask_index'] = mask.sum(axis=1)
+        mask_indices = np.where(mask['mask_index'] != 0)[0]
+    else:
+        if mask_path is None:
+            mask = nimds.get_img("mni_icbm152")
+        else:
+            mask = image.load_img(mask_path)
+        
+        mask_data = mask.get_fdata().flatten()
+        mask_indices = np.where(mask_data > mask_threshold)[0]
+
+    # Initialize full DataFrame
+    full_df = pd.DataFrame(np.nan, index=range(len(mask_data)), columns=df_1.columns)
+
+    # Insert values back into the full DataFrame based on mask indices
+    full_df.iloc[mask_indices, :] = df_1.values
+
+    print(f'Data has been unmasked to shape: {full_df.shape}')
+    return full_df
 
 class CsvToNifti:
     """
@@ -440,4 +500,5 @@ class CsvToNifti:
 
     def save_nifti(self, output_file):
         nib.save(self.nifti_image, output_file)
+
 

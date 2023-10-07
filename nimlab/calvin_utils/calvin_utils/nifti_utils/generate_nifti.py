@@ -7,14 +7,13 @@ import pandas as pd
 from glob import glob
 from calvin_utils.file_utils.import_matrices import import_matrices_from_folder
 from nimlab import datasets as nimds
-import numpy as np
 from nilearn import image, plotting
 import nibabel as nib
 import os
-import pandas as pd
 import nibabel as nib
 from nilearn.image import resample_to_img
 from nilearn import image
+import re
 
 def nifti_from_matrix(matrix, output_file, ref_file=None, use_reference=True, reference='MNI', use_affine=False, affine='MNI', output_name=None):
     """Converts a flattened matrix to a NIfTI file using the given affine matrix.
@@ -281,3 +280,74 @@ def threshold_matrix_by_another(matrix_file_1, matrix_file_2, method='under_thre
         print('Unknown method, please try again.')
     nifti_img = view_and_save_nifti(thresholded_df, out_dir=out_dir)
     return nifti_img
+
+class NiftiDataFrameHandler:
+    def __init__(self, df, out_dir=None, use_colnames_as_paths=False):
+        """
+        Initialize the NiftiDataFrameHandler class.
+        
+        Args:
+            df (DataFrame): DataFrame containing flattened NIfTI files in each column.
+            out_dir (str, optional): The directory where to save the new NIfTI files. Ignored if use_colnames_as_paths is True.
+            use_colnames_as_paths (bool, optional): If True, uses column names as absolute paths for saving NIfTI files.
+        """
+        self.df = df
+        self.out_dir = out_dir
+        self.use_colnames_as_paths = use_colnames_as_paths
+    
+    def sanitize_paths(self):
+        """
+        Sanitize column names to be used as file paths.
+        """
+        sanitized_colnames = []
+        for col_name in self.df.columns:
+            # Replace '/' with '_' to prevent path errors
+            sanitized_name = col_name.replace('/', '_')
+            
+            # Remove all non-alphanumeric and special characters except for '/'
+            sanitized_name = re.sub(r'[^\w/.-]', '', sanitized_name)
+            
+            # Append '.nii' extension if not present
+            if not sanitized_name.endswith('.nii'):
+                sanitized_name += '.nii'
+            
+            sanitized_colnames.append(sanitized_name)
+        
+        self.df.columns = sanitized_colnames
+    
+    def create_directories(self):
+        """
+        Check for and create directories where NIfTI files will be saved.
+        """
+        if self.use_colnames_as_paths:
+            for col_name in self.df.columns:
+                output_dir = os.path.dirname(col_name)
+                if not os.path.exists(output_dir):
+                    os.makedirs(output_dir)
+        else:
+            if not os.path.exists(self.out_dir):
+                os.makedirs(self.out_dir)
+
+    def save_niftis(self):
+        """
+        Save NIfTI files and print their locations.
+        """
+        for col_name in self.df.columns:
+            matrix = self.df[col_name].values
+            if self.use_colnames_as_paths:
+                output_name = os.path.basename(col_name)
+                output_dir = os.path.dirname(col_name)
+            else:
+                output_name = col_name
+                output_dir = self.out_dir
+
+            view_and_save_nifti(matrix, out_dir=output_dir, output_name=output_name)
+            print(f"NIfTI file saved at: {os.path.join(output_dir, output_name)}")
+
+    def run(self):
+        """
+        Run the entire pipeline.
+        """
+        self.sanitize_paths()
+        self.create_directories()
+        self.save_niftis()
