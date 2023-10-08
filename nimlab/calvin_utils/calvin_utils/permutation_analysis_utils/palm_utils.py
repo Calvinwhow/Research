@@ -244,12 +244,41 @@ class CalvinPalmSubmitter:
         eb_file = self.prepare_eb(eb, working_directory)
 
         # Build and run PALM command
-        palm_cmd = self.build_palm_cmd(dv_nifti_file_path, design_matrix_file, contrast_matrix_file,
-                                    mask, eb_file, iterations, accel, save_1p, logp, tfce, ise_flag, 
-                                    two_tailed_flag, corrcon_flag, fdr_flag)
-        self.run_palm_cmd(palm_cmd, output_directory, cluster_name, username, cluster_email, 
-                        queue, cores, memory, dryrun, job_name, job_time, num_nodes, 
-                        num_tasks, x11_forwarding, service_class, debug, extra)
+        palm_cmd = self.build_palm_cmd(
+            concat_file=dv_nifti_file_path, 
+            design_matrix_file=design_matrix_file, 
+            contrast_matrix_file=contrast_matrix_file,
+            mask=mask, 
+            eb_file=eb_file, 
+            iterations=iterations, 
+            accel=accel, 
+            save_1p=save_1p, 
+            logp=logp, 
+            tfce=tfce, 
+            ise_flag=ise_flag, 
+            two_tailed_flag=two_tailed_flag, 
+            corrcon_flag=corrcon_flag, 
+            fdr_flag=fdr_flag
+        )
+        self.run_palm_cmd(
+            palm_cmd=palm_cmd, 
+            output_directory=output_directory, 
+            cluster_name=cluster_name, 
+            username=username, 
+            cluster_email=cluster_email, 
+            queue=queue, 
+            cores=cores, 
+            memory=memory, 
+            dryrun=dryrun, 
+            job_name=job_name, 
+            job_time=job_time, 
+            num_nodes=num_nodes, 
+            num_tasks=num_tasks, 
+            x11_forwarding=x11_forwarding, 
+            service_class=service_class, 
+            debug=debug, 
+            extra=extra
+)
 
     def text2vest(self, input_file, output_file):
         """
