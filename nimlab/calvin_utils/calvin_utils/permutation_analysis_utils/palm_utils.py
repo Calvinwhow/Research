@@ -238,7 +238,7 @@ class CalvinPalmSubmitter:
             design_matrix, contrast_matrix, working_directory)
 
         # Prepare mask
-        mask = self.prepare_mask(mask)
+        mask = self.prepare_mask(mask, working_directory)
 
         # Prepare exchangeability blocks
         eb_file = self.prepare_eb(eb, working_directory)
