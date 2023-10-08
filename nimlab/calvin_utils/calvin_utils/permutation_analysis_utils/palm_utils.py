@@ -455,10 +455,14 @@ class CalvinPalmSubmitter:
         if cluster_name == "":
             cmd = palm_cmd
         else:
-            cmd = self.build_cluster_submit_string(palm_cmd, output_directory, cluster_name, username, 
-                                                cluster_email, queue, cores, memory, job_name, job_time, 
-                                                num_nodes, num_tasks, x11_forwarding, service_class, debug, extra)
-
+            cmd = self.build_cluster_submit_string(cmd=palm_cmd, directory=output_directory, cluster_name=cluster_name, 
+                                                   username=username, cluster_email=cluster_email, 
+                                                   queue=queue, cores=cores, memory=memory, 
+                                                   job_name=job_name, job_time=job_time, num_nodes=num_nodes,
+                                                   num_tasks=num_tasks,
+                                                   x11_forwarding=x11_forwarding, service_class=service_class, debug=debug, 
+                                                   extra=extra, dryrun=False  # Assuming you want to keep the default value for dryrun
+                                                   )
         if not dryrun:
             ipython = get_ipython()
             ipython.system(" ".join(cmd))
