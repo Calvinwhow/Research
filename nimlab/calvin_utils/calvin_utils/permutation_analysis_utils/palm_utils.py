@@ -227,8 +227,8 @@ class CalvinPalmSubmitter:
         # Setup directories
         working_directory = os.path.join(output_directory, "palm_config")
         os.makedirs(working_directory, exist_ok=True)
-        output_directory = os.path.join(output_directory, "palm_results")
-        os.makedirs(output_directory, exist_ok=True)
+        self.output_directory = os.path.join(output_directory, "palm_results")
+        os.makedirs(self.output_directory, exist_ok=True)
 
         # Verify software
         config.verify_software(["palm_path"])
@@ -372,7 +372,7 @@ class CalvinPalmSubmitter:
         palm_cmd = [
             f"{config.software['palm_path']}/palm",
             "-i", os.path.abspath(concat_file),
-            "-o", os.path.abspath(self.output_dir) + "/",
+            "-o", os.path.abspath(self.output_directory) + "/",
             "-d", os.path.abspath(design_matrix_file),
             "-t", os.path.abspath(contrast_matrix_file),
             "-n", str(iterations),
