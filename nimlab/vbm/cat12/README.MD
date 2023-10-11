@@ -8,4 +8,4 @@ This bad-boy is going to take you from T1 Nifti Files to Smoothed, Warped, Modul
 **Copy-Paste the Below Command to Run on Your Favourite Cluster**
 ___
 > conda activate nimlab
-> bsub -q big-multi -n 8 -R 'rusage[mem=50000] span[ptile=8]' -M 50000 -o ~/terminal_outputs/cat12_output.txt -J 'CAT12_Pipeline' -cwd /PHShome/cu135/github_repository/Research/nimlab vbm/cat12/cat12-docker/scripts/docker_run.sh
+> bsub -q big-multi -n 8 -R 'rusage[mem=50000] span[ptile=8]' -M 50000 -o ~/terminal_outputs/cat12_output.txt -J 'CAT12_Pipeline' -cwd /PHShome/cu135/github_repository/Research/nimlab vbm_dir/cat12/cat12-docker/scripts/docker_run.sh
