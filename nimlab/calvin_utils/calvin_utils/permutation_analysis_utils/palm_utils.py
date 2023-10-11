@@ -100,6 +100,11 @@ class CalvinPalm:
         # Handle intercept
         if intercept and 'Intercept' not in map(str.capitalize, formula_vars):
             design_matrix['Intercept'] = 1.0
+        if intercept==False:
+            try:
+                self.design_matrix.pop('Intercept')
+            except:
+                print('Could not remove Intercept.')
 
         # Handle interactions
         design_matrix = self.handle_interactions(design_matrix, formula_vars)
@@ -113,6 +118,7 @@ class CalvinPalm:
 
         # Preprocess column names (Assuming this is a function you have)
         self.design_matrix = preprocess_colnames_for_regression(design_matrix)
+
 
         return self.design_matrix
 
