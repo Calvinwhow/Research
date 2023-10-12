@@ -1,16 +1,16 @@
 #!/bin/bash
 
 # Relative path to Dockerfile
-DOCKERFILE_PATH="vbm/cat12/docker/Dockerfile"
+DOCKERFILE_PATH="/PHShome/cu135/github_repository/Research/nimlab/vbm/cat12/docker/Dockerfile"
 
 # Data path. Do not place wildcards here, but do place them in the WILCARDED_SUBJECT_PATH.
 DATA_PATH="/data/nimlab/dl_archive/adni_calvin/raws"
 
 # CAT12 script path
-CAT12_SCRIPT_PATH="vbm/cat12/scripts/cat_12_vbm.sh"
+CAT12_SCRIPT_PATH="/PHShome/cu135/github_repository/Research/nimlab/vbm/cat12/scripts/cat_12_vbm.sh"
 
 # FSLMATHS script path
-FSLMATHS_SCRIPT_PATH="vbm/cat12/scripts/fslmath_wm_gm_csf_tiv_correction.sh"
+FSLMATHS_SCRIPT_PATH="/PHShome/cu135/github_repository/Research/nimlab/vbm/cat12/scripts/fslmath_wm_gm_csf_tiv_correction.sh"
 
 # Surface Extraction. Set to 1 if you want to extract surface values. Set to 0 if you do not. 
 SURFACE_EXTRACTION=0
