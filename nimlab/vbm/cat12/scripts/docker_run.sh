@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Relative path to Dockerfile
-DOCKERFILE_PATH="/PHShome/cu135/github_repository/Research/nimlab/vbm/cat12/docker/Dockerfile"
+DOCKERFILE_PATH="/PHShome/cu135/github_repository/Research/nimlab/vbm/cat12/containers/Dockerfile"
 
 # Data path. Do not place wildcards here, but do place them in the WILCARDED_SUBJECT_PATH.
 DATA_PATH="/data/nimlab/dl_archive/adni_calvin/raws"
