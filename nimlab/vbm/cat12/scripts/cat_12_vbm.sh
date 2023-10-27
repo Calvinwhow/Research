@@ -23,6 +23,9 @@ WILDCARDED_SUBJECT_PATH=${WILDCARDED_SUBJECT_PATH:-"/sub*.nii*"}
 # Skip surface extractison by setting output.surface to 0. Engage by setting to 1. 
 SURFACE_EXTRACTION=${SURFACE_EXTRACTION:-0} # Use default value of 0 if not set
 
+# Prepare Directories
+mkdir -p $TMP_DIR
+
 # Segment and preprocess the data (this also implicitly does warping)
 SEGMENT_CMD="-m $MATLAB_RUNTIME -b $CAT12_DIR/standalone/cat_standalone_segment_enigma.m -a \"matlabbatch{1}.spm.tools.cat.estwrite.output.surface = $SURFACE_EXTRACTION;\" $RAW_DATA_PATH/$WILDCARDED_SUBJECT_PATH"
 

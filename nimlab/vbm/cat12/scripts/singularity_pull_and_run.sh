@@ -31,10 +31,16 @@ singularity exec \
     -B $(dirname $CAT12_SCRIPT_PATH):/scripts \
     cat12-latest.sif \
     /scripts/$(basename $CAT12_SCRIPT_PATH)
-# Run FSLMATHS for post-processing
-bash $FSLMATHS_SCRIPT_PATH
 
-singularity run --cleanenv --contain \
-  -B $PWD:/data \
-  -B $HOME/.matlab \
-  cat12-latest.sif \
+# Pull the FSL container
+singularity pull shub://aces/cbrain-containers-recipes:fsl_v6.0.1
+
+# Run FSLMATHS for post-processing
+singularity exec \
+    -B $PWD:/data \
+    -B $DATA_PATH:$DATA_PATH \
+    -B $(dirname $FSLMATHS_SCRIPT_PATH):/scripts \
+    fsl_v6.0.1.sif \
+    /scripts/$(basename $FSLMATHS_SCRIPT_PATH)
+    
+# bash $FSLMATHS_SCRIPT_PATH

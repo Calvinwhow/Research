@@ -12,4 +12,4 @@ ___
 
 If you need singularity:
 > conda activate nimlab
-> bsub -q big-multi -n 8 -R 'rusage[mem=64000] span[ptile=8]' -M 64000 -o ~/terminal_outputs/cat12_output.txt -J 'CAT12_Pipeline' /PHShome/cu135/github_repository/Research/nimlab/vbm/cat12/scripts/singularity_run.sh
+> bsub -q bigmem -n 8 -R 'rusage[mem=64000] span[ptile=8]' -M 64000 -o ~/terminal_outputs/cat12_output.txt -J 'CAT12_Pipeline' /PHShome/cu135/github_repository/Research/nimlab/vbm/cat12/scripts/singularity_run.sh

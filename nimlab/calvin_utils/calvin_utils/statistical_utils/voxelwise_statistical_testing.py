@@ -446,6 +446,114 @@ def voxelwise_interaction_f_stat(outcome_df, predictor_neuroimaging_dfs, predict
         return results_df['statistic']
     else:
         return results_df['statistic'], results_df, temp_df
+    
+#--------DEVELOPMENT--------
+def voxelwise_interaction_t_stat(outcome_df, predictor_neuroimaging_dfs, predictor_clinical_dfs, model_type='linear', manual_t_stat=False, permutation=False, comprehensive_results=False):
+    """
+    Perform voxelwise regression with interactions between the corresponding voxels from
+    neuroimaging dataframes and clinical dataframes on a patient's outcome.
+    and use F-test to compare models with and without interactions and extract T-statistic for coefficients. 
+    
+    The T-statistic of a given coefficient is the Mean Squared Residual divided by the Mean Squared Error of that 
+    
+    Parameters:
+        outcome_df (pd.DataFrame): DataFrame containing the outcome variable in 'outcome' column with patients in rows and 'subject_id' as index.
+        predictor_neuroimaging_dfs (list of pd.DataFrame): List of DataFrames containing voxelwise neuroimaging data with patients in rows and 'subject_id' as index.
+        predictor_clinical_dfs (list of pd.DataFrame): List of DataFrames containing clinical data with patients in rows and 'subject_id' as index.
+        model_type (str): Specifies the type of regression model to use ('linear' or 'logistic').
+    
+    Returns:
+        results_df (pd.DataFrame): DataFrame containing t-statistics and p-values for each voxel.
+        
+    Cite: 
+    chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://sites.duke.edu/bossbackup/files/2013/02/FTestTutorial.pdf
+    """
+    
+    # Number of voxels in the first neuroimaging dataframe
+    n_voxels = predictor_neuroimaging_dfs[0].shape[1]
+
+    # Initialize a list to store the results for each voxel
+    results = []
+
+    # Define lambda functions for standardization
+    standardize_within_patient = lambda df: df.apply(lambda x: (x - x.mean()) / x.std(), axis=1)
+    standardize_across_patients = lambda df: df.apply(lambda x: (x - x.mean()) / x.std(), axis=0)
+    
+    # Standardize outcome data across patients
+    outcome_df = standardize_across_patients(outcome_df)
+    if predictor_neuroimaging_dfs[0] is not None:
+        # Standardize neuroimaging data within each patient
+        predictor_neuroimaging_dfs = [standardize_within_patient(df) for df in predictor_neuroimaging_dfs]
+    if predictor_clinical_dfs[0] is not None:
+        # Standardize clinical data across patients
+        predictor_clinical_dfs = [standardize_across_patients(df) for df in predictor_clinical_dfs]
+
+    # Loop through each voxel and perform regression
+    for i in tqdm(range(0, n_voxels)):
+        # Create temporary dataframe with outcome and corresponding voxel from all neuroimaging dataframes and clinical data
+        temp_df = outcome_df[['outcome']].copy()
+        variable_names = []
+        
+        if predictor_neuroimaging_dfs[0] is not None:
+            for j, neuroimaging_df in enumerate(predictor_neuroimaging_dfs):
+                temp_df[f'dataframe_{j}_voxel_i'] = neuroimaging_df.iloc[:, i]
+                variable_names.append(f'dataframe_{j}_voxel_i')
+        
+        if predictor_clinical_dfs[0] is not None:
+            for j, clinical_df in enumerate(predictor_clinical_dfs):
+                temp_df = temp_df.merge(clinical_df, left_index=True, right_index=True)
+                variable_names.extend(clinical_df.columns.tolist())
+            
+        # Construct the regression formulas dynamically
+        variables_combined = " + ".join(variable_names)
+        interaction_terms = " + ".join([f"{var1}:{var2}" for idx, var1 in enumerate(variable_names) for var2 in variable_names[idx+1:]])
+        
+        formula_interaction = f'outcome ~ {variables_combined} + {interaction_terms}'
+                
+        # Fit the models
+        if model_type == 'linear':
+            model_interaction = smf.ols(formula_interaction, data=temp_df).fit()
+        else:
+            raise ValueError(f"Unsupported model_type: {model_type}")
+
+        if manual_t_stat:
+            # Calculate the t-statistic manually
+            print('under development')
+        else:
+            # Extract t-statistic from from statsmodels regression
+            t_statistic = model_interaction.tvalues[-1] 
+            if np.isinf(t_statistic):
+                print("Warning: Infinite t-statistic detected. Setting p-value to zero.")
+                P_value = 0.0
+            else:
+                P_value = model_interaction.pvalues[-1]
+            statistic = 'statsmodels_t_statistic'
+        # Store the results for the current voxel
+        if comprehensive_results:
+            voxel_results = {
+                'voxel_index': i,
+                'statistic': t_statistic,
+                'statistic_method': statistic,
+                'one_way_p_value': P_value,
+                'unc_r_squared': model_interaction.rsquared,
+                'adj_r_squared': model_interaction.rsquared_adj
+            }
+        else:
+            voxel_results = {
+                'voxel_index': i,
+                'statistic': t_statistic
+            }
+        # Append the voxel_results dictionary to the results list
+        results.append(voxel_results)
+
+    # Convert the results list to a DataFrame
+    results_df = pd.DataFrame(results)
+    print('Example formula with interaction: ', formula_interaction)
+    if permutation:
+        return results_df['statistic']
+    else:
+        return results_df['statistic'], results_df, temp_df
+#-----DEVELOPMENT --------------------------------
 
 def generate_r_map(matrix_df, mask_path=None, method='pearson'):
     '''
