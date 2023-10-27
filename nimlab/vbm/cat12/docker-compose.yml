@@ -1,0 +1,8 @@
+version: '3'
+services:
+  orchestrator:
+    build:
+      context: . # Set working directory (vbm/cat12/)
+      dockerfile: ./containers/Dockerfile.orchestrator
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock

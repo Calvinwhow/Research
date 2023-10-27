@@ -46,7 +46,3 @@ TIV_CMD="-m $MATLAB_RUNTIME -b $CAT12_DIR/standalone/cat_standalone_get_TIV.m $R
 
 # Run TIV estimation in parallel
 $CAT12_DIR/standalone/cat_parallelize.sh -p $N_PARALLEL -l $TMP_DIR -c "$TIV_CMD"
-
-# Additional steps for dividing each segment by its corresponding TIV would typically be custom code.
-# This could be done in a separate script or function after all the parallel jobs have completed.
-
