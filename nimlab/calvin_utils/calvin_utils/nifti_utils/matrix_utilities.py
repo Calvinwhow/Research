@@ -41,7 +41,7 @@ def view_nifti_html(img):
     html_image = plotting.view_img(img, cut_coords=(0,0,0), black_bg=False, opacity=.75, cmap='ocean_hot')
     return html_image
 
-def threshold_matrix(matrix, threshold=0.95, method='raw', direction='keep_above', output='zero', mask_mode=False):
+def threshold_matrix(matrix, threshold=95, method='percentile', direction='keep_above', output='zero', mask_mode=False):
     """
     Thresholds the matrix based on the provided criteria.
     
@@ -73,6 +73,7 @@ def threshold_matrix(matrix, threshold=0.95, method='raw', direction='keep_above
             threshold_value = st.norm.ppf(threshold)
         elif method == 'percentile':
             threshold_value = np.percentile(matrix, threshold)
+            print(threshold_value)
         else:  # raw
             threshold_value = threshold
     
