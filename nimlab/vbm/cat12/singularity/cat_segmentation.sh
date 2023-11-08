@@ -1,4 +1,5 @@
 #!/bin/bash
+module load singularity
 
 # Define the pattern to match your NIfTI files
 NIFTI_PATH="/data/nimlab/dl_archive/adni_calvin/raws/*/*.nii"
