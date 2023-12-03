@@ -1,0 +1,552 @@
+<?xml version="1.0" encoding="utf-8"?>
+<S>
+   <SPMpreprocessing>
+      <Affine>[1.07652496161779 0.0278875317299802 -0.0348872580420423 -3.94102727211239;-0.00284360502398675 1.01503832960288 0.335673033574288 -19.1480346946978;0.0547874715235034 -0.379862402056022 1.12263531989818 -12.6632999168971;0 0 0 1]</Affine>
+      <Affine0>[1.07652496161779 0.0278875317299802 -0.0348872580420423 -3.94102727211239;-0.00284360502398675 1.01503832960288 0.335673033574288 -19.1480346946978;0.0547874715235034 -0.379862402056022 1.12263531989818 -12.6632999168971;0 0 0 1]</Affine0>
+      <lkp>[1 2 3 3 4 4 4 5 5 5 5 6 6]</lkp>
+      <mn>[184.339963288165 244.219935137477 49.9191972803839 112.521325096296 85.0498004558245 22.7933256552417 41.2063457504156 192.631676369282 436.539562878653 340.436329972265 176.634121946597 88.4335976042697 16.6293407066015]</mn>
+      <vr>[543.604670151723;212.548382069395;283.718739813898;1086.32078293467;775.256138794822;56.4184792627579;157.980473701943;2792.45813262117;858.165163909292;6356.95291763226;1183.85553499842;1586.7482860881;36.2870860449674]</vr>
+      <ll>-5.39409685134888</ll>
+      <Affine_translation>[-3.94102727211239 -19.1480346946978 -12.6632999168971]</Affine_translation>
+      <Affine_rotation>[0.359301440956927 -0.0466802814929241 0.0203427744981097]</Affine_rotation>
+      <Affine_scaling>[1.07792195733813 1.08413170531327 1.16933087105922]</Affine_scaling>
+      <Affine_shearing>[0.00544235278444395 0.0197904409573624 -0.0738713092317165]</Affine_shearing>
+      <Affine0_translation>[-3.94102727211239 -19.1480346946978 -12.6632999168971]</Affine0_translation>
+      <Affine0_rotation>[0.359301440956927 -0.0466802814929241 0.0203427744981097]</Affine0_rotation>
+      <Affine0_scaling>[1.07792195733813 1.08413170531327 1.16933087105922]</Affine0_scaling>
+      <Affine0_shearing>[0.00544235278444395 0.0197904409573624 -0.0738713092317165]</Affine0_shearing>
+   </SPMpreprocessing>
+   <filedata>
+      <path>/data</path>
+      <file>941_S_4376</file>
+      <fname>/data/941_S_4376.nii</fname>
+      <F>/data/941_S_4376.nii</F>
+      <Fm>/data/mri/m941_S_4376.nii</Fm>
+      <Fp0>/data/mri/p0941_S_4376.nii</Fp0>
+      <fnames>/data/941_S_4376</fnames>
+   </filedata>
+   <parameter>
+      <opts>
+         <tpm>
+            <item>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/tpm/TPM.nii</item>
+         </tpm>
+         <ngaus>[1 1 2 3 4 2]</ngaus>
+         <affreg>mni</affreg>
+         <warpreg>[0 0.001 0.5 0.05 0.2]</warpreg>
+         <tol>0.0001</tol>
+         <accstr>0.5</accstr>
+         <biasstr>0.5</biasstr>
+         <biasreg>0.001</biasreg>
+         <biasfwhm>60</biasfwhm>
+         <samp>3</samp>
+         <redspmres>0</redspmres>
+         <fwhm>1</fwhm>
+         <biasacc>0</biasacc>
+      </opts>
+      <extopts>
+         <uhrlim>1.4</uhrlim>
+         <gcutstr>2</gcutstr>
+         <cleanupstr>0.5</cleanupstr>
+         <spm_kamap>0</spm_kamap>
+         <NCstr>-Inf</NCstr>
+         <LASstr>0.5</LASstr>
+         <BVCstr>0.5</BVCstr>
+         <regstr>2.22044604925031e-16</regstr>
+         <WMHC>2</WMHC>
+         <WMHCstr>0.5</WMHCstr>
+         <SLC>0</SLC>
+         <mrf>1</mrf>
+         <restype>optimal</restype>
+         <resval>[1 0.3]</resval>
+         <bids_folder>../derivatives/CAT12.8.2_2166</bids_folder>
+         <bids_yes>0</bids_yes>
+         <nproc>6</nproc>
+         <species>human</species>
+         <APP>1070</APP>
+         <setCOM>1</setCOM>
+         <vox>1.5</vox>
+         <bb>12</bb>
+         <shootingsurf>Template_T1</shootingsurf>
+         <pth_templates>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym</pth_templates>
+         <darteltpm>
+            <item>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Template_1_Dartel.nii</item>
+         </darteltpm>
+         <shootingtpm>
+            <item>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Template_0_GS.nii</item>
+         </shootingtpm>
+         <shootingT1>
+            <item>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Template_T1_masked.nii</item>
+         </shootingT1>
+         <brainmask>
+            <item>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/brainmask.nii</item>
+         </brainmask>
+         <T1>
+            <item>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/T1.nii</item>
+         </T1>
+         <cat12atlas>
+            <item>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/cat.nii</item>
+         </cat12atlas>
+         <pbtres>0.5</pbtres>
+         <SRP>22</SRP>
+         <reduce_mesh>1</reduce_mesh>
+         <vdist>2</vdist>
+         <pbtlas>0</pbtlas>
+         <thick_measure>1</thick_measure>
+         <thick_limit>5</thick_limit>
+         <close_parahipp>0</close_parahipp>
+         <scale_cortex>0.7</scale_cortex>
+         <add_parahipp>0.1</add_parahipp>
+         <colormap>BCGWHw</colormap>
+         <report/>
+         <verb>2</verb>
+         <ignoreErrors>1</ignoreErrors>
+         <expertgui>1</expertgui>
+         <subfolders>1</subfolders>
+         <experimental>0</experimental>
+         <print>2</print>
+         <fontsize>10</fontsize>
+         <send_info>1</send_info>
+         <gifti_dat>1</gifti_dat>
+         <atlas>
+            <tr>
+               <td>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/neuromorphometrics.nii</td>
+               <td>0</td>
+               <td>
+                  <item>csf</item>
+                  <item>gm</item>
+                  <item>wm</item>
+               </td>
+               <td>[false]</td>
+            </tr>
+            <tr>
+               <td>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/lpba40.nii</td>
+               <td>0</td>
+               <td>
+                  <item>gm</item>
+                  <item>wm</item>
+               </td>
+               <td>[false]</td>
+            </tr>
+            <tr>
+               <td>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/cobra.nii</td>
+               <td>0</td>
+               <td>
+                  <item>gm</item>
+                  <item>wm</item>
+               </td>
+               <td>[false]</td>
+            </tr>
+            <tr>
+               <td>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/hammers.nii</td>
+               <td>0</td>
+               <td>
+                  <item>csf</item>
+                  <item>gm</item>
+                  <item>wm</item>
+               </td>
+               <td>[false]</td>
+            </tr>
+            <tr>
+               <td>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/thalamus.nii</td>
+               <td>0</td>
+               <td>
+                  <item>gm</item>
+               </td>
+               <td>[false]</td>
+            </tr>
+            <tr>
+               <td>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/thalamic_nuclei.nii</td>
+               <td>0</td>
+               <td>
+                  <item>gm</item>
+               </td>
+               <td>[false]</td>
+            </tr>
+            <tr>
+               <td>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/suit.nii</td>
+               <td>0</td>
+               <td>
+                  <item>gm</item>
+                  <item>wm</item>
+               </td>
+               <td>[false]</td>
+            </tr>
+            <tr>
+               <td>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/ibsr.nii</td>
+               <td>0</td>
+               <td>
+                  <item>csf</item>
+                  <item>gm</item>
+                  <item>wm</item>
+               </td>
+               <td>[false]</td>
+            </tr>
+            <tr>
+               <td>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/aal3.nii</td>
+               <td>1</td>
+               <td>
+                  <item>gm</item>
+               </td>
+               <td>[false]</td>
+            </tr>
+            <tr>
+               <td>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/mori.nii</td>
+               <td>1</td>
+               <td>
+                  <item>gm</item>
+                  <item>wm</item>
+               </td>
+               <td>[false]</td>
+            </tr>
+            <tr>
+               <td>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/anatomy3.nii</td>
+               <td>1</td>
+               <td>
+                  <item>gm</item>
+                  <item>wm</item>
+               </td>
+               <td>[false]</td>
+            </tr>
+            <tr>
+               <td>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/julichbrain.nii</td>
+               <td>1</td>
+               <td>
+                  <item>gm</item>
+                  <item>wm</item>
+               </td>
+               <td>[false]</td>
+            </tr>
+            <tr>
+               <td>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Schaefer2018_100Parcels_17Networks_order.nii</td>
+               <td>1</td>
+               <td>
+                  <item>gm</item>
+                  <item>wm</item>
+               </td>
+               <td>[false]</td>
+            </tr>
+            <tr>
+               <td>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Schaefer2018_200Parcels_17Networks_order.nii</td>
+               <td>1</td>
+               <td>
+                  <item>gm</item>
+                  <item>wm</item>
+               </td>
+               <td>[false]</td>
+            </tr>
+            <tr>
+               <td>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Schaefer2018_400Parcels_17Networks_order.nii</td>
+               <td>1</td>
+               <td>
+                  <item>gm</item>
+                  <item>wm</item>
+               </td>
+               <td>[false]</td>
+            </tr>
+            <tr>
+               <td>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Schaefer2018_600Parcels_17Networks_order.nii</td>
+               <td>1</td>
+               <td>
+                  <item>gm</item>
+                  <item>wm</item>
+               </td>
+               <td>[false]</td>
+            </tr>
+         </atlas>
+         <satlas>
+            <tr>
+               <td>Desikan</td>
+               <td>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/atlases_surfaces/lh.aparc_a2009s.freesurfer.annot</td>
+               <td>0</td>
+               <td>1</td>
+            </tr>
+            <tr>
+               <td>Destrieux</td>
+               <td>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/atlases_surfaces/lh.aparc_DK40.freesurfer.annot</td>
+               <td>0</td>
+               <td>1</td>
+            </tr>
+            <tr>
+               <td>HCP</td>
+               <td>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/atlases_surfaces/lh.aparc_HCP_MMP1.freesurfer.annot</td>
+               <td>0</td>
+               <td>0</td>
+            </tr>
+            <tr>
+               <td>Schaefer2018_100P_17N</td>
+               <td>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/atlases_surfaces/lh.Schaefer2018_100Parcels_17Networks_order.annot</td>
+               <td>1</td>
+               <td>0</td>
+            </tr>
+            <tr>
+               <td>Schaefer2018_200P_17N</td>
+               <td>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/atlases_surfaces/lh.Schaefer2018_200Parcels_17Networks_order.annot</td>
+               <td>0</td>
+               <td>0</td>
+            </tr>
+            <tr>
+               <td>Schaefer2018_400P_17N</td>
+               <td>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/atlases_surfaces/lh.Schaefer2018_400Parcels_17Networks_order.annot</td>
+               <td>1</td>
+               <td>0</td>
+            </tr>
+            <tr>
+               <td>Schaefer2018_600P_17N</td>
+               <td>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/atlases_surfaces/lh.Schaefer2018_600Parcels_17Networks_order.annot</td>
+               <td>1</td>
+               <td>0</td>
+            </tr>
+         </satlas>
+         <LAB>
+            <NB>0</NB>
+            <CT>1</CT>
+            <CB>3</CB>
+            <BG>5</BG>
+            <BV>7</BV>
+            <TH>9</TH>
+            <ON>11</ON>
+            <MB>13</MB>
+            <BS>13</BS>
+            <VT>15</VT>
+            <NV>17</NV>
+            <HC>19</HC>
+            <HD>21</HD>
+            <HI>23</HI>
+            <PH>25</PH>
+            <LE>27</LE>
+         </LAB>
+         <new_release>0</new_release>
+         <lazy>1</lazy>
+         <affmod>0</affmod>
+         <regmethod>
+            <shooting>
+               <shootingtpm>
+                  <item>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Template_0_GS.nii</item>
+               </shootingtpm>
+               <regstr>2.22044604925031e-16</regstr>
+            </shooting>
+         </regmethod>
+         <restypes>
+            <optimal>[1 0.3]</optimal>
+         </restypes>
+         <LASmyostr>0</LASmyostr>
+         <pbtmethod>pbt2x</pbtmethod>
+         <darteltpms>
+            <item>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Template_1_Dartel.nii</item>
+            <item>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Template_2_Dartel.nii</item>
+            <item>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Template_3_Dartel.nii</item>
+            <item>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Template_4_Dartel.nii</item>
+            <item>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Template_5_Dartel.nii</item>
+            <item>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Template_6_Dartel.nii</item>
+         </darteltpms>
+         <shootingtpms>
+            <item>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Template_0_GS.nii</item>
+            <item>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Template_1_GS.nii</item>
+            <item>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Template_2_GS.nii</item>
+            <item>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Template_3_GS.nii</item>
+            <item>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Template_4_GS.nii</item>
+         </shootingtpms>
+         <templates>
+            <item>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Template_0_GS.nii</item>
+            <item>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Template_1_GS.nii</item>
+            <item>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Template_2_GS.nii</item>
+            <item>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Template_3_GS.nii</item>
+            <item>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Template_4_GS.nii</item>
+         </templates>
+         <inv_weighting>0</inv_weighting>
+         <AMAPframing>1</AMAPframing>
+      </extopts>
+   </parameter>
+   <qualitymeasures>
+      <res_vx_vol>[1.20000457763672 1 1]</res_vx_vol>
+      <res_vx_voli>[1.20000457763672 1 1]</res_vx_voli>
+      <res_RMS>1.07082693689645</res_RMS>
+      <res_BB>0</res_BB>
+      <tissue_mn>[8.25500011444092 49.5130004882812 171.14599609375 255.220001220703]</tissue_mn>
+      <tissue_mnr>[0.0323446430265903 0.194001257419586 0.670582234859467 1]</tissue_mnr>
+      <tissue_weighting>T1</tissue_weighting>
+      <tissue_std>[3.13582591902311 29.343859175946 28.8892545185886 19.2841503481692]</tissue_std>
+      <tissue_stdr>[0.0126974508166313 0.118817888200283 0.116977125406265 0.0780845507979393]</tissue_stdr>
+      <contrast>86.8842468261719</contrast>
+      <contrastr>0.340428829193115</contrastr>
+      <res_ECR>0.425794661045074</res_ECR>
+      <NCR>0.157440692186356</NCR>
+      <ICR>0.332659959793091</ICR>
+   </qualitymeasures>
+   <qualityratings>
+      <res_vx_vol>[2.40000915527344 2 2]</res_vx_vol>
+      <res_RMS>2.14165387379289</res_RMS>
+      <res_ECR>3.0703809261322</res_ECR>
+      <res_BB>1</res_BB>
+      <tissue_mn>[8.62400054931641 8.62400054931641 8.62400054931641 8.62400054931641]</tissue_mn>
+      <tissue_std>[8.624 8.624 8.624 8.624]</tissue_std>
+      <contrast>0.5</contrast>
+      <contrastr>2.97690081596375</contrastr>
+      <NCR>2.59116697311401</NCR>
+      <ICR>1.28487086296082</ICR>
+      <SIQR>2.76916393148255</SIQR>
+      <IQR>2.435359318146</IQR>
+   </qualityratings>
+   <ratings_help>
+      <qualitymeasures>
+         <res_vx_vol>voxel dimensions</res_vx_vol>
+         <res_RMS>RMS error of voxel size</res_RMS>
+         <res_ECR>normalized gradient slope of the white matter boundary</res_ECR>
+         <res_BB>brain next to the image boundary</res_BB>
+         <tissue_mn>mean within the tissue classes</tissue_mn>
+         <tissue_std>standard deviation within the tissue classes</tissue_std>
+         <contrast>contrast between tissue classes</contrast>
+         <contrastr>contrast between tissue classes</contrastr>
+         <NCR>noise to contrast ratio</NCR>
+         <ICR>inhomogeneity to contrast ratio</ICR>
+      </qualitymeasures>
+      <subjectmeasures>
+         <vol_TIV>total intracranial volume (GM+WM+VT)</vol_TIV>
+         <vol_rel_CGW>relative tissue volume (CSF,GM,WM)</vol_rel_CGW>
+         <vol_rel_WMH>relative WMH volume</vol_rel_WMH>
+      </subjectmeasures>
+   </ratings_help>
+   <software>
+      <version_segment>1639</version_segment>
+      <system>LINUX</system>
+      <version_spm>7771</version_spm>
+      <version_matlab>9.3</version_matlab>
+      <version_cat>12.8.2</version_cat>
+      <revision_cat>2166</revision_cat>
+      <function>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/cat_vol_qa.m</function>
+      <markdefs>/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/cat_stat_marks.m</markdefs>
+      <qamethod>cat12</qamethod>
+      <date>20231203-205739</date>
+   </software>
+   <subjectmeasures>
+      <software>
+         <version_segment>1639</version_segment>
+      </software>
+      <vol_abs_CGW>[407.486392078355 553.699307481295 440.001913761812 0 0]</vol_abs_CGW>
+      <vol_abs_WMH>8.7125838239782</vol_abs_WMH>
+      <vol_rel_WMH>0.00621799946070416</vol_rel_WMH>
+      <vol_TIV>1401.18761332146</vol_TIV>
+      <vol_rel_CGW>[0.290815011640321 0.395164289362202 0.314020698997477 0 0]</vol_rel_CGW>
+   </subjectmeasures>
+   <subjectratings>
+      <vol_TIV>1.00003360331113</vol_TIV>
+      <vol_rel_CGW>[3.07282707687359 4.94691611641885 3.48959588716734 0.5 0.5]</vol_rel_CGW>
+      <vol_rel_WMH>1.62179994607042</vol_rel_WMH>
+      <SQR>4.08616135285272</SQR>
+   </subjectratings>
+   <catlog>
+      <item>------------------------------------------------------------------------</item>
+      <item>CAT12.8.2 r2166: 1/1: /data/941_S_4376.n</item>
+      <item>------------------------------------------------------------------------</item>
+      <item>SANLM denoising (medium) 33s</item>
+      <item>APP: Rough bias correction</item>
+      <item>Initialize 6s</item>
+      <item>Estimate background 5s</item>
+      <item>Initial correction 7s</item>
+      <item>Refine background 4s</item>
+      <item>Final correction 6s</item>
+      <item>Final scaling 8s</item>
+      <item>41s</item>
+      <item>Correct center-of-mass 14s</item>
+      <item>Affine registration 14s</item>
+      <item>SPM preprocessing 1 (estimate 1 - TPM registration): 57s</item>
+      <item>SPM preprocessing 1 (estimate 2): 66s</item>
+      <item>SPM preprocessing 2 (write)</item>
+      <item>Write Segmentation 16s</item>
+      <item>Update Segmentation 14s</item>
+      <item>Update Skull-Stripping 32s</item>
+      <item>Update probability maps 8s</item>
+      <item>70s</item>
+      <item>Global intensity correction 11s</item>
+      <item>SANLM denoising after intensity normalization (medium) 6s</item>
+      <item>Fast Optimized Shooting registration 26s</item>
+      <item>Local adaptive segmentation (LASstr=0.50)</item>
+      <item>Prepare maps 2s</item>
+      <item>Prepare partitions 2s</item>
+      <item>Prepare segments (LASmod = 1.00) 8s</item>
+      <item>Estimate local tissue thresholds (WM) 13s</item>
+      <item>Estimate local tissue thresholds (GM) 16s</item>
+      <item>Intensity transformation 0s</item>
+      <item>SANLM denoising after LAS (medium) 18s</item>
+      <item>62s</item>
+      <item>ROI segmentation (partitioning)</item>
+      <item>Atlas -&gt; subject space 6s</item>
+      <item>Major structures 2s</item>
+      <item>Ventricle detection 7s</item>
+      <item>Blood vessel detection 5s</item>
+      <item>WMH detection (WMHCstr=0.47 &gt; WMHCstr'=0.40) 14s</item>
+      <item>Manual stroke lesion detection 0s</item>
+      <item>Closing of deep structures 1s</item>
+      <item>Side alignment 2s</item>
+      <item>Final corrections 4s</item>
+      <item>41s</item>
+      <item>Blood vessel correction (BVCstr=0.50) 1s</item>
+      <item>Amap using initial SPM12 segmentations (MRF filter strength 0.06) 13s</item>
+      <item>AMAP peaks: [CSF,GM,WM] = [0.36 0.05,0.68 0.08,0.98 0.05]</item>
+      <item>Final cleanup (gcutstr=0.23)</item>
+      <item>Level 1 cleanup (ROI estimation) 3s</item>
+      <item>Level 1 cleanup (brain masking) 3s</item>
+      <item>Level 2 cleanup (CSF correction) 2s</item>
+      <item>Level 3 cleanup (CSF/WM PVE) 2s</item>
+      <item>10s</item>
+      <item>Optimized Shooting registration with 2.50:-0.25:1.50 mm (regstr=0.00)</item>
+      <item>Template: "/opt/spm/spm12_mcr/home/gaser/gaser/spm/spm12/toolbox/cat12/templates_MNI152NLin2009cAsym/Template_0_GS.nii"</item>
+      <item>1 | 2.50 | 0.0964 0.0000 0.0964 | 32.0000</item>
+      <item>2 | 2.50 | 0.0925 0.0016 0.0941 | 29.4886</item>
+      <item>3 | 2.50 | 0.0913 0.0024 0.0937 | 26.9772</item>
+      <item>4 | 2.50 | 0.0908 0.0027 0.0935 | 24.6107</item>
+      <item>5 | 2.50 | 0.0903 0.0029 0.0932 | 22.6548</item>
+      <item>6 | 2.50 | 0.0899 0.0031 0.0930 | 20.6989</item>
+      <item>7 | 2.50 | 0.0895 0.0032 0.0927 | 18.9688</item>
+      <item>8 | 2.50 | 0.0890 0.0034 0.0924 | 17.4455</item>
+      <item>9 | 2.50 | 0.0886 0.0035 0.0921 | 15.9223</item>
+      <item>10 | 2.50 | 0.0881 0.0036 0.0917 | 14.6627</item>
+      <item>11 | 2.50 | 0.0876 0.0038 0.0914 | 13.4764</item>
+      <item>12 | 2.50 | 0.0871 0.0039 0.0910 | 12.3015</item>
+      <item>13 | 2.50 | 0.0866 0.0040 0.0907 | 11.3776</item>
+      <item>14 | 2.50 | 0.0861 0.0042 0.0903 | 10.4537</item>
+      <item>15 | 2.25 | 0.0878 0.0043 0.0921 | 9.5920</item>
+      <item>16 | 2.25 | 0.0835 0.0064 0.0899 | 8.8725</item>
+      <item>17 | 2.25 | 0.0817 0.0072 0.0889 | 8.1530</item>
+      <item>18 | 2.25 | 0.0806 0.0076 0.0882 | 7.5234</item>
+      <item>19 | 2.25 | 0.0797 0.0078 0.0875 | 6.9630</item>
+      <item>20 | 2.25 | 0.0789 0.0078 0.0867 | 6.4027</item>
+      <item>21 | 2.25 | 0.0782 0.0079 0.0861 | 5.9447</item>
+      <item>22 | 2.25 | 0.0775 0.0079 0.0854 | 5.5083</item>
+      <item>23 | 2.25 | 0.0769 0.0079 0.0847 | 5.0803</item>
+      <item>24 | 2.25 | 0.0762 0.0080 0.0841 | 4.7404</item>
+      <item>25 | 2.25 | 0.0756 0.0079 0.0835 | 4.4005</item>
+      <item>26 | 2.25 | 0.0750 0.0079 0.0829 | 4.0868</item>
+      <item>27 | 2.25 | 0.0745 0.0079 0.0823 | 3.8221</item>
+      <item>29 | 2.00 | 0.0750 0.0071 0.0821 | 3.3283</item>
+      <item>30 | 2.00 | 0.0720 0.0084 0.0804 | 3.1221</item>
+      <item>43 | 1.75 | 0.0712 0.0045 0.0757 | 1.5785</item>
+      <item>44 | 1.75 | 0.0657 0.0075 0.0732 | 1.5194</item>
+      <item>57 | 1.50 | 0.0633 0.0058 0.0692 | 1.0900</item>
+      <item>58 | 1.50 | 0.0593 0.0085 0.0677 | 1.0730</item>
+      <item>Shooting registration with 2.50:-0.25:1.50 mm takes 151s</item>
+      <item>Prepare output 6s</item>
+      <item>157s</item>
+      <item>Jacobian determinant (RMS): 0.013 0.052 0.097 0.125 0.156 | 0.162523</item>
+      <item>Template Matching: 0.096 0.223 0.216 0.197 0.178 | 0.177756</item>
+      <item>Write result maps 5s</item>
+      <item>ROI estimation in native space</item>
+      <item>ROI estimation of 'thalamic_nuclei' atlas 3s</item>
+      <item>ROI estimation of 'cobra' atlas 12s</item>
+      <item>ROI estimation of 'neuromorphometrics' atlas 54s</item>
+      <item>ROI estimation of 'suit' atlas 7s</item>
+      <item>ROI estimation of 'Schaefer2018_100Parcels_17Networks_order' atlas 27s</item>
+      <item>Write results 28s</item>
+      <item>105s</item>
+      <item>Quality check 11s</item>
+      <item>/data/report/catreport_941_S_4376.pdf</item>
+      <item>------------------------------------------------------------------------</item>
+      <item>CAT preprocessing takes 13 minute(s) and 17 second(s).</item>
+      <item>Image Quality Rating (IQR): 80.65% (B-)</item>
+      <item>GM volume (GMV): 39.52% (553.70 / 1401.19 ml)</item>
+      <item>Segmentations are saved in /data/mri</item>
+      <item>Reports are saved in /data/report</item>
+      <item>Labels are saved in /data/label</item>
+      <item>------------------------------------------------------------------------</item>
+   </catlog>
+</S>

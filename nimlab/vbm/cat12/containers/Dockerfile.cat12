@@ -1,21 +1,16 @@
 FROM ubuntu:focal-20210416
 
-MAINTAINER Jordi Huguet <jhuguet@barcelonabeta.org>
-
 ARG DEBIAN_FRONTEND=noninteractive
 
-LABEL description="CAT12 standalone docker image"
-LABEL maintainer="jhuguet@barcelonabeta.org"
-
-# set the working directory
+# 1) set the working directory
 WORKDIR /root
 
-# install dependencies and prereqs
+# 2) install dependencies and prereqs
 RUN apt-get update \
  && apt-get -y install wget nano unzip libxext6 libxt6 moreutils \
  && apt-get clean
 
-# install Matlab MCR at /opt/mcr
+# 3) install Matlab MCR at /opt/mcr
 ENV MATLAB_VERSION R2017b
 ENV MCR_VERSION v93
 RUN mkdir /tmp/mcr_install \
@@ -25,7 +20,7 @@ RUN mkdir /tmp/mcr_install \
  && /tmp/mcr_install/install -destinationFolder /opt/mcr -agreeToLicense yes -mode silent
 ENV MCRROOT /opt/mcr/${MCR_VERSION}
 
-# install MCR/standalone version of SPM12 plus CAT12 at /opt/spm
+# 4) install MCR/standalone version of SPM12 plus CAT12 at /opt/spm
 ENV SPM_VERSION 12
 ENV SPM_REVISION r7771
 ENV MCR_INHIBIT_CTF_LOCK 1
@@ -44,5 +39,26 @@ RUN wget --progress=bar:force -P /tmp http://www.neuro.uni-jena.de/cat12/${CAT_F
 ENV PATH="${PATH}:/opt/spm/standalone"
 ENV SPMROOT /opt/spm
 
+# 5) Mount Necessary Scripts
+# Copy the CAT12 segmentation script into the container
+COPY ./run_segmentation.sh /usr/local/bin/run_segmentation.sh
+COPY ./cat_standalone_segment_calvin.m /opt/spm/standalone/cat_standalone_segment_calvin.m
+COPY ./cat_standalone_smooth_calvin.m /opt/spm/standalone/cat_standalone_smooth_calvin.m
+COPY ./cat_standalone_get_TIV_calvin.m /opt/spm/standalone/cat_standalone_get_TIV_calvin.m
+# Give execute permissions to the script
+RUN chmod +x /usr/local/bin/run_segmentation.sh
+RUN chmod +x /opt/spm/standalone/cat_standalone_segment_calvin.m
+RUN chmod +x /opt/spm/standalone/cat_standalone_smooth_calvin.m
+RUN chmod +x /opt/spm/standalone/cat_standalone_get_TIV_calvin.m
 
-ENTRYPOINT ["cat_standalone.sh"]
+# 6) Orchestrate the Script
+ENTRYPOINT ["/usr/local/bin/run_segmentation.sh"]
+
+# ---Instructions---
+# To Build:
+# docker build -t cat12:latest -f Dockerfile.cat12 .
+# To Run:
+# docker run --rm -v C:/Users/Calvin/Documents/Software/Research/nimlab/vbm/cat12/test:/data cat12:latest
+
+
+

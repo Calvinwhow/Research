@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="utf-8"?>
+<S>
+   <Schaefer2018_100Parcels_17Networks_order>
+      <ids>[1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;17;18;19;20;21;22;23;24;25;26;27;28;29;30;31;32;33;34;35;36;37;38;39;40;41;42;43;44;45;46;47;48;49;50;51;52;53;54;55;56;57;58;59;60;61;62;63;64;65;66;67;68;69;70;71;72;73;74;75;76;77;78;79;80;81;82;83;84;85;86;87;88;89;90;91;92;93;94;95;96;97;98;99;100]</ids>
+      <names>
+         <item>lVisCent_ExStr_1</item>
+         <item>lVisCent_ExStr_2</item>
+         <item>lVisCent_Striate_1</item>
+         <item>lVisCent_ExStr_3</item>
+         <item>lVisPeri_ExStrInf_1</item>
+         <item>lVisPeri_StriCal_1</item>
+         <item>lVisPeri_ExStrSup_1</item>
+         <item>lSomMotA_1</item>
+         <item>lSomMotA_2</item>
+         <item>lSomMotB_Aud_1</item>
+         <item>lSomMotB_S2_1</item>
+         <item>lSomMotB_S2_2</item>
+         <item>lSomMotB_Cent_1</item>
+         <item>lDorsAttnA_TempOcc_1</item>
+         <item>lDorsAttnA_ParOcc_1</item>
+         <item>lDorsAttnA_SPL_1</item>
+         <item>lDorsAttnB_PostC_1</item>
+         <item>lDorsAttnB_PostC_2</item>
+         <item>lDorsAttnB_PostC_3</item>
+         <item>lDorsAttnB_FEF_1</item>
+         <item>lSalVentAttnA_ParOper_1</item>
+         <item>lSalVentAttnA_Ins_1</item>
+         <item>lSalVentAttnA_Ins_2</item>
+         <item>lSalVentAttnA_ParMed_1</item>
+         <item>lSalVentAttnA_FrMed_1</item>
+         <item>lSalVentAttnB_PFCl_1</item>
+         <item>lSalVentAttnB_PFCmp_1</item>
+         <item>lLimbicB_OFC_1</item>
+         <item>lLimbicA_TempPole_1</item>
+         <item>lLimbicA_TempPole_2</item>
+         <item>lContA_IPS_1</item>
+         <item>lContA_PFCl_1</item>
+         <item>lContA_PFCl_2</item>
+         <item>lContB_PFClv_1</item>
+         <item>lContC_pCun_1</item>
+         <item>lContC_pCun_2</item>
+         <item>lContC_Cingp_1</item>
+         <item>lDefaultA_PFCd_1</item>
+         <item>lDefaultA_pCunPCC_1</item>
+         <item>lDefaultA_PFCm_1</item>
+         <item>lDefaultB_Temp_1</item>
+         <item>lDefaultB_Temp_2</item>
+         <item>lDefaultB_IPL_1</item>
+         <item>lDefaultB_PFCd_1</item>
+         <item>lDefaultB_PFCl_1</item>
+         <item>lDefaultB_PFCv_1</item>
+         <item>lDefaultB_PFCv_2</item>
+         <item>lDefaultC_Rsp_1</item>
+         <item>lDefaultC_PHC_1</item>
+         <item>lTempPar_1</item>
+         <item>rVisCent_ExStr_1</item>
+         <item>rVisCent_ExStr_2</item>
+         <item>rVisCent_ExStr_3</item>
+         <item>rVisPeri_StriCal_1</item>
+         <item>rVisPeri_ExStrInf_1</item>
+         <item>rVisPeri_ExStrSup_1</item>
+         <item>rSomMotA_1</item>
+         <item>rSomMotA_2</item>
+         <item>rSomMotA_3</item>
+         <item>rSomMotA_4</item>
+         <item>rSomMotB_Aud_1</item>
+         <item>rSomMotB_S2_1</item>
+         <item>rSomMotB_S2_2</item>
+         <item>rSomMotB_Cent_1</item>
+         <item>rDorsAttnA_TempOcc_1</item>
+         <item>rDorsAttnA_ParOcc_1</item>
+         <item>rDorsAttnA_SPL_1</item>
+         <item>rDorsAttnB_PostC_1</item>
+         <item>rDorsAttnB_PostC_2</item>
+         <item>rDorsAttnB_FEF_1</item>
+         <item>rSalVentAttnA_ParOper_1</item>
+         <item>rSalVentAttnA_Ins_1</item>
+         <item>rSalVentAttnA_ParMed_1</item>
+         <item>rSalVentAttnA_FrMed_1</item>
+         <item>rSalVentAttnB_IPL_1</item>
+         <item>rSalVentAttnB_PFCl_1</item>
+         <item>rSalVentAttnB_PFCmp_1</item>
+         <item>rLimbicB_OFC_1</item>
+         <item>rLimbicA_TempPole_1</item>
+         <item>rContA_IPS_1</item>
+         <item>rContA_PFCl_1</item>
+         <item>rContA_PFCl_2</item>
+         <item>rContB_Temp_1</item>
+         <item>rContB_IPL_1</item>
+         <item>rContB_PFCld_1</item>
+         <item>rContB_PFClv_1</item>
+         <item>rContC_Cingp_1</item>
+         <item>rContC_pCun_1</item>
+         <item>rDefaultA_IPL_1</item>
+         <item>rDefaultA_PFCd_1</item>
+         <item>rDefaultA_pCunPCC_1</item>
+         <item>rDefaultA_PFCm_1</item>
+         <item>rDefaultB_PFCd_1</item>
+         <item>rDefaultB_PFCv_1</item>
+         <item>rDefaultB_PFCv_2</item>
+         <item>rDefaultC_Rsp_1</item>
+         <item>rDefaultC_PHC_1</item>
+         <item>rTempPar_1</item>
+         <item>rTempPar_2</item>
+         <item>rTempPar_3</item>
+      </names>
+      <version>2166</version>
+      <data>
+         <Vgm>[3.71131302444503;3.39406475885978;2.86951216524187;4.61608825552516;3.28081725722572;2.90370052582359;2.66777021655508;4.33598366210696;5.83398467836686;5.07550176425364;1.78866095751015;3.16756035173713;2.33492658571751;7.34435279053606;2.70439622682919;4.99586381637727;2.14686939065929;1.15688913440576;2.87879689473165;3.82182168101714;2.8307825940714;3.89247605096203;2.91771468247487;1.68981822636151;2.90931936268495;3.97718697850585;4.20581843139844;6.07023497748116;11.5589476951684;5.56443068558513;3.60717144833607;5.04229693116382;2.58262164446032;4.82265373676862;1.57339425347436;2.40803744528345;1.40161947900456;2.41287040412526;4.1178228028203;5.15746912556081;7.41461657724087;3.51000871381764;7.31033384835498;8.83894673628558;2.46649885051246;2.69856560858131;6.18913896289401;1.8201293122981;2.71752568186105;2.52979790953594;4.99501204797896;5.64855808874673;3.14369202898203;3.68055527076654;3.98168582516157;3.12557431721181;0.822511381415433;2.40614097945938;1.45452321284912;4.29466585141516;5.14090907026644;1.87480716512357;2.31638062094118;1.91222378878366;5.7477113974069;4.85868681502461;4.31366826354527;2.24550505840316;4.54095383637022;3.43980139087844;2.9297617893682;5.83703406680518;1.96619104696103;4.35903784764774;1.6436345201702;3.98531406024482;3.30299615665641;6.07725617934238;12.1693688583164;2.67090433297513;4.4042333085118;4.11466984854807;7.22902057464656;3.3691140611501;3.40714714318911;5.67149462662374;1.75540435616562;3.45214496717662;2.75717289458541;3.40104359218349;2.51328019753994;5.16054678581376;7.03894926548415;2.74937521313384;3.42191896351521;1.53276821242631;4.37140965476338;4.36373432252594;4.27395045373075;2.63665949131239]</Vgm>
+         <Vwm>[2.05993728938899;1.7790373943215;1.31411326675583;2.86939920788996;1.52824584532744;2.09413977649417;1.98426170699983;2.20926492984391;3.16734858705022;2.44682347894044;0.543065609953788;1.12238076627225;1.34557691524589;2.67484317482174;1.15147734497601;2.0033441369972;1.17075741989547;0.53971971222936;1.10178304131303;1.84640706449159;1.15105852374521;0.770247654763571;0.449498195020839;0.772939425983105;0.852826796073123;1.69643943392692;1.23822591216004;2.12158929455262;1.76611970487117;1.66746991198464;1.64206746000746;2.38787736827544;1.36913935424295;1.4146124716373;0.3831449972979;0.667809615835689;0.682360257306092;0.612604698577592;1.51923404504704;1.1735809634325;2.39541151836231;1.42921017356528;2.90685818321193;2.15489766350534;1.22844705409178;0.543635022801682;1.90832259868863;0.564359806954256;0.760172320648607;1.07477116961434;2.71210919446506;2.44974584724522;1.86478360054464;2.41628689676055;2.78011416269408;2.10955630356004;0.309492949674917;1.28513433269164;0.720073343200574;2.58240517820125;2.97092900552041;0.405530965070889;0.652849557477969;1.0370204383704;2.11962222617894;2.04940077947674;1.85109884653385;1.06806055466025;1.59553551945291;1.58218487580095;0.98342964467747;0.77237472386323;1.09962302817734;1.91636968370628;0.860737408461213;1.40114418426667;1.45960087539254;1.68378527162351;2.81876844086004;1.41085245353058;1.72511718644671;1.91212025205295;1.93925448398075;1.1214348793169;1.08837592924796;1.59078726242163;1.09406065311967;1.27472958380474;0.923481179506781;1.01726036370486;1.2080422677523;1.80763044503076;1.9782146314772;0.545305616648575;0.975519026129217;0.509766657477118;1.17891745236094;1.21962348839971;1.80392219213723;1.17252213093818]</Vwm>
+      </data>
+   </Schaefer2018_100Parcels_17Networks_order>
+   <cobra>
+      <ids>[1;2;3;11;12;13;14;15;16;17;18;19;20;21;22;23;26;31;32;33;34;35;36;37;38;39;101;102;103;111;112;113;114;115;116;117;118;119;120;121;122;123;126;131;132;133;134;135;136;137;138;139]</ids>
+      <names>
+         <item>lStriatum</item>
+         <item>lGloPal</item>
+         <item>lTha</item>
+         <item>lAntCerebLI_II</item>
+         <item>lAntCerebLIII</item>
+         <item>lAntCerebLIV</item>
+         <item>lAntCerebLV</item>
+         <item>lSupPostCerebLVI</item>
+         <item>lSupPostCerebCI</item>
+         <item>lSupPostCerebCII</item>
+         <item>lSupPostCerebLVIIB</item>
+         <item>lInfPostCerebLVIIIA</item>
+         <item>lInfPostCerebLVIIIB</item>
+         <item>lInfPostCerebLIX</item>
+         <item>lInfPostCerebLX</item>
+         <item>lAntCerebWM</item>
+         <item>lAmy</item>
+         <item>lHCA1</item>
+         <item>lSub</item>
+         <item>lFor</item>
+         <item>lCA4</item>
+         <item>lCA2_3</item>
+         <item>lStratum</item>
+         <item>lFimbra</item>
+         <item>lMamBody</item>
+         <item>lAlveus</item>
+         <item>rStriatum</item>
+         <item>rGloPal</item>
+         <item>rTha</item>
+         <item>rAntCerebLI_II</item>
+         <item>rAntCerebLIII</item>
+         <item>rAntCerebLIV</item>
+         <item>rAntCerebLV</item>
+         <item>rSupPostCerebLVI</item>
+         <item>rSupPostCerebCI</item>
+         <item>rSupPostCerebCII</item>
+         <item>rSupPostCerebLVIIB</item>
+         <item>rInfPostCerebLVIIIA</item>
+         <item>rInfPostCerebLVIIIB</item>
+         <item>rInfPostCerebLIX</item>
+         <item>rInfPostCerebLX</item>
+         <item>rAntCerebWM</item>
+         <item>rAmy</item>
+         <item>rHCA1</item>
+         <item>rSub</item>
+         <item>rFor</item>
+         <item>rCA4</item>
+         <item>rCA2_3</item>
+         <item>rStratum</item>
+         <item>rFimbra</item>
+         <item>rMamBody</item>
+         <item>rAlveus</item>
+      </names>
+      <version>2166</version>
+      <data>
+         <Vgm>[6.73152217995307;0.214000819575799;3.89858431861666;0.0635343601753438;0.686906154896391;1.8050045456201;3.20366871537957;5.91119435287687;7.98255757119868;6.35271604142044;3.68605643458139;4.72873806088158;2.84356380688783;3.03447747775422;0.47206768833499;0.372744957958836;1.11179718345692;0.690487341667491;0.225205567139466;0.15561941960483;0.607842319295409;0.103896867059119;0.453055846623395;0.062828475439971;0.0172612426826547;0.300994091388486;6.9214993798596;0.161205324006163;4.20710784962328;0.116066325450927;0.797071282048074;1.56200596947078;3.49538747612209;6.76085877515739;8.02177183459633;6.88767336843991;4.09639211502941;3.57845131222369;2.77012822665156;2.81925783046561;0.469921797584314;0.437196969604452;1.09906301657943;0.729254548425261;0.192828972739409;0.0900191683176038;0.568482168920041;0.131656973124393;0.425229857975667;0.058682577071822;0.0304942342653005;0.243403282335439]</Vgm>
+         <Vwm>[0.827099644799551;1.14988203838585;1.32536978894728;0.00405648614252345;0.210071393878336;0.581046931380734;0.922332948805901;1.35757226113935;1.89577667048538;1.34974164062056;0.666044908083171;0.627272993449476;0.703381520285939;0.810214866849999;0.104367459010595;7.77065553368968;0.00858826829475606;0.0583296356876161;0.0651955441891498;0.240382096701592;0.00403766261395344;0.00410354517852602;0.0161459442875679;0.0230353825485026;0.019727134491908;0.0240942099644873;0.859019767174445;1.11919956842358;1.16199975185993;0.00406119204254742;0.237996207039007;0.447733480428662;0.968554302426511;1.3635158153015;1.97181931549935;1.19014573614815;0.503357225444289;0.500354859306743;0.44331464092307;0.684449679759884;0.102654511097887;7.81808630407243;0.00449413489839651;0.0480707727502418;0.0506637235740387;0.201944302051427;0.00661649604166337;0.00514354908382211;0.00898826983255594;0.00752944069995681;0.0143624080890781;0.0128471081919544]</Vwm>
+      </data>
+   </cobra>
+   <neuromorphometrics>
+      <ids>[4;11;23;30;31;32;35;36;37;38;39;40;41;44;45;46;47;48;49;50;51;52;55;56;57;58;59;60;61;62;63;64;69;71;72;73;75;76;100;101;102;103;104;105;106;107;108;109;112;113;114;115;116;117;118;119;120;121;122;123;124;125;128;129;132;133;134;135;136;137;138;139;140;141;142;143;144;145;146;147;148;149;150;151;152;153;154;155;156;157;160;161;162;163;164;165;166;167;168;169;170;171;172;173;174;175;176;177;178;179;180;181;182;183;184;185;186;187;190;191;192;193;194;195;196;197;198;199;200;201;202;203;204;205;206;207]</ids>
+      <names>
+         <item>3rd Ventricle</item>
+         <item>4th Ventricle</item>
+         <item>Right Accumbens Area</item>
+         <item>Left Accumbens Area</item>
+         <item>Right Amygdala</item>
+         <item>Left Amygdala</item>
+         <item>Brain Stem</item>
+         <item>Right Caudate</item>
+         <item>Left Caudate</item>
+         <item>Right Cerebellum Exterior</item>
+         <item>Left Cerebellum Exterior</item>
+         <item>Right Cerebellum White Matter</item>
+         <item>Left Cerebellum White Matter</item>
+         <item>Right Cerebral White Matter</item>
+         <item>Left Cerebral White Matter</item>
+         <item>CSF</item>
+         <item>Right Hippocampus</item>
+         <item>Left Hippocampus</item>
+         <item>Right Inf Lat Vent</item>
+         <item>Left Inf Lat Vent</item>
+         <item>Right Lateral Ventricle</item>
+         <item>Left Lateral Ventricle</item>
+         <item>Right Pallidum</item>
+         <item>Left Pallidum</item>
+         <item>Right Putamen</item>
+         <item>Left Putamen</item>
+         <item>Right Thalamus Proper</item>
+         <item>Left Thalamus Proper</item>
+         <item>Right Ventral DC</item>
+         <item>Left Ventral DC</item>
+         <item>Right vessel</item>
+         <item>Left vessel</item>
+         <item>Optic Chiasm</item>
+         <item>Cerebellar Vermal Lobules I-V</item>
+         <item>Cerebellar Vermal Lobules VI-VII</item>
+         <item>Cerebellar Vermal Lobules VIII-X</item>
+         <item>Left Basal Forebrain</item>
+         <item>Right Basal Forebrain</item>
+         <item>Right ACgG anterior cingulate gyrus</item>
+         <item>Left ACgG anterior cingulate gyrus</item>
+         <item>Right AIns anterior insula</item>
+         <item>Left AIns anterior insula</item>
+         <item>Right AOrG anterior orbital gyrus</item>
+         <item>Left AOrG anterior orbital gyrus</item>
+         <item>Right AnG angular gyrus</item>
+         <item>Left AnG angular gyrus</item>
+         <item>Right Calc calcarine cortex</item>
+         <item>Left Calc calcarine cortex</item>
+         <item>Right CO central operculum</item>
+         <item>Left CO central operculum</item>
+         <item>Right Cun cuneus</item>
+         <item>Left Cun cuneus</item>
+         <item>Right Ent entorhinal area</item>
+         <item>Left Ent entorhinal area</item>
+         <item>Right FO frontal operculum</item>
+         <item>Left FO frontal operculum</item>
+         <item>Right FRP frontal pole</item>
+         <item>Left FRP frontal pole</item>
+         <item>Right FuG fusiform gyrus</item>
+         <item>Left FuG fusiform gyrus</item>
+         <item>Right GRe gyrus rectus</item>
+         <item>Left GRe gyrus rectus</item>
+         <item>Right IOG inferior occipital gyrus</item>
+         <item>Left IOG inferior occipital gyrus</item>
+         <item>Right ITG inferior temporal gyrus</item>
+         <item>Left ITG inferior temporal gyrus</item>
+         <item>Right LiG lingual gyrus</item>
+         <item>Left LiG lingual gyrus</item>
+         <item>Right LOrG lateral orbital gyrus</item>
+         <item>Left LOrG lateral orbital gyrus</item>
+         <item>Right MCgG middle cingulate gyrus</item>
+         <item>Left MCgG middle cingulate gyrus</item>
+         <item>Right MFC medial frontal cortex</item>
+         <item>Left MFC medial frontal cortex</item>
+         <item>Right MFG middle frontal gyrus</item>
+         <item>Left MFG middle frontal gyrus</item>
+         <item>Right MOG middle occipital gyrus</item>
+         <item>Left MOG middle occipital gyrus</item>
+         <item>Right MOrG medial orbital gyrus</item>
+         <item>Left MOrG medial orbital gyrus</item>
+         <item>Right MPoG postcentral gyrus medial segment</item>
+         <item>Left MPoG postcentral gyrus medial segment</item>
+         <item>Right MPrG precentral gyrus medial segment</item>
+         <item>Left MPrG precentral gyrus medial segment</item>
+         <item>Right MSFG superior frontal gyrus medial segment</item>
+         <item>Left MSFG superior frontal gyrus medial segment</item>
+         <item>Right MTG middle temporal gyrus</item>
+         <item>Left MTG middle temporal gyrus</item>
+         <item>Right OCP occipital pole</item>
+         <item>Left OCP occipital pole</item>
+         <item>Right OFuG occipital fusiform gyrus</item>
+         <item>Left OFuG occipital fusiform gyrus</item>
+         <item>Right OpIFG opercular part of the inferior frontal gyrus</item>
+         <item>Left OpIFG opercular part of the inferior frontal gyrus</item>
+         <item>Right OrIFG orbital part of the inferior frontal gyrus</item>
+         <item>Left OrIFG orbital part of the inferior frontal gyrus</item>
+         <item>Right PCgG posterior cingulate gyrus</item>
+         <item>Left PCgG posterior cingulate gyrus</item>
+         <item>Right PCu precuneus</item>
+         <item>Left PCu precuneus</item>
+         <item>Right PHG parahippocampal gyrus</item>
+         <item>Left PHG parahippocampal gyrus</item>
+         <item>Right PIns posterior insula</item>
+         <item>Left PIns posterior insula</item>
+         <item>Right PO parietal operculum</item>
+         <item>Left PO parietal operculum</item>
+         <item>Right PoG postcentral gyrus</item>
+         <item>Left PoG postcentral gyrus</item>
+         <item>Right POrG posterior orbital gyrus</item>
+         <item>Left POrG posterior orbital gyrus</item>
+         <item>Right PP planum polare</item>
+         <item>Left PP planum polare</item>
+         <item>Right PrG precentral gyrus</item>
+         <item>Left PrG precentral gyrus</item>
+         <item>Right PT planum temporale</item>
+         <item>Left PT planum temporale</item>
+         <item>Right SCA subcallosal area</item>
+         <item>Left SCA subcallosal area</item>
+         <item>Right SFG superior frontal gyrus</item>
+         <item>Left SFG superior frontal gyrus</item>
+         <item>Right SMC supplementary motor cortex</item>
+         <item>Left SMC supplementary motor cortex</item>
+         <item>Right SMG supramarginal gyrus</item>
+         <item>Left SMG supramarginal gyrus</item>
+         <item>Right SOG superior occipital gyrus</item>
+         <item>Left SOG superior occipital gyrus</item>
+         <item>Right SPL superior parietal lobule</item>
+         <item>Left SPL superior parietal lobule</item>
+         <item>Right STG superior temporal gyrus</item>
+         <item>Left STG superior temporal gyrus</item>
+         <item>Right TMP temporal pole</item>
+         <item>Left TMP temporal pole</item>
+         <item>Right TrIFG triangular part of the inferior frontal gyrus</item>
+         <item>Left TrIFG triangular part of the inferior frontal gyrus</item>
+         <item>Right TTG transverse temporal gyrus</item>
+         <item>Left TTG transverse temporal gyrus</item>
+      </names>
+      <version>2166</version>
+      <data>
+         <Vcsf>[0.976926080508867;1.38564764497346;0.00122824001354343;0.00158118251534074;0.0468472379751082;0.0425178097027207;5.32490036231715;0.484877151168543;0.368584941997904;11.5806089954852;12.7847641980074;0.547719740625005;0.631042412225027;5.66109932695049;4.15078767267787;1.20625872284554;0.23769973451048;0.29658937171086;0.0609978801160714;0.0460895879639612;13.5115197879295;13.2118762962852;0;0.00052235493842295;0;0.00230118529053311;0.662548417087611;0.542213840511645;1.22385879769708;1.23729884917583;0;0;0.196904281248208;1.66250047661064;0.929095319111561;0.428034580308714;0.289530518465191;0.305845874456244;1.18421158781365;1.03205571291528;1.21351522722711;1.3963865146575;0.526905544872656;0.367639054948673;3.86712537656028;4.48921715964688;1.40800538424855;0.864069189495872;1.52713054439318;1.47082915452163;2.0798855974895;2.06709496291417;0.681470841218082;0.798751289147884;0.775579434555439;0.84857265499489;2.78806241748119;2.72991160728195;1.40647126844035;1.4500384948766;0.554129179121982;0.737673409755118;2.22139673465185;1.82022814310531;2.97049136433733;3.24382888318712;2.57681457248649;2.26732632807681;0.70713682247901;0.774031196970203;0.90796112322153;1.07547705789919;0.487517158989856;0.488317162530374;8.58003278679571;8.39907681069764;1.81184222568632;2.29493583568532;1.46014205719442;1.46042911453884;0.81667606034091;0.799000699886663;1.00199441898454;1.00450736957946;3.55244181259922;3.03899985195092;3.44511436250079;3.85128062402127;1.70325357574898;2.24631918020422;0.730341620521868;1.08599474691145;1.69689589467782;1.50690458388182;0.513281963301917;0.535522048370859;1.17623508646836;1.40686655870922;4.44542876346442;4.43213930200239;1.31146383788082;1.46625972379681;0.729885143981637;0.707423880717495;0.794633625701549;0.989330840821998;6.58965340436453;8.14419111483354;1.00416383932475;1.20969874292458;1.04439457952369;1.10004185009657;6.19232483423815;6.65082071218185;0.721565112113417;0.949853042910269;0.554543296875692;0.617301183341445;9.28991313565806;8.78562415320282;2.61293704629588;2.37493143002505;3.48697803174214;3.9035537498824;2.2458203452798;2.05270431635827;7.54952530889968;7.58747839953096;2.50415545663463;2.34588661903565;4.1942513253129;4.12874989696058;1.14039024401886;1.38266411202941;0.672694335017992;0.488990105071505]</Vcsf>
+         <Vgm>[0.0172988899722537;0.174259491834935;0.287648156274067;0.303154098068968;0.771047647718263;0.785965352010169;1.10279010829912;2.55008503271458;2.44782111285648;41.5065162604575;41.2219646167172;1.21103052102671;1.13997142610508;26.3286137629455;25.859939040823;0.184221882811518;2.76298466571236;2.67419844643758;0.0530025557250158;0.0223106737481161;0.214320823102018;0.29284818366839;0.187332483067106;0.238010323411381;3.01692916837515;3.04942340823732;4.6332694815794;4.23723973226448;0.844045585036956;0.835325551362714;0;0;0.0747955807744806;4.09754508036582;1.62369562364957;2.23268618201438;0.309398829546544;0.294744656103017;2.2068931411667;2.76304585196137;3.23380529281194;3.24017237879879;1.12854078496901;1.21205169221237;6.59874052472644;5.89236606957256;1.84225176166597;1.84663766028267;2.83414259619321;2.48346361417562;2.43772697882095;2.56966631089548;1.71868421431006;1.93452033199841;1.33784981775056;1.39057943284775;2.65850428359062;2.84335675375092;5.19486691884485;5.14492319708935;1.47643858684952;1.5283823162672;3.92111617889274;4.18166776348149;8.65825427870214;8.7116144801747;6.36274905535943;5.77496797785703;1.50912576961403;1.59371903549011;2.9989996982961;2.55359564488815;1.13425374686497;1.25270125796048;11.3512339829045;11.3795494100412;3.70056474166453;3.85305473987238;2.90887700745572;2.86933803034028;0.464867660904932;0.629635350513978;1.50459399498766;1.60642497016376;5.3722464189982;4.80182541334952;11.1773886052548;10.1291210750729;2.84269793831551;2.58956756544065;2.57780750985451;2.81532842163036;2.09676095611985;2.13126932823757;0.944554198750145;1.14565143843963;2.8443120491312;2.98073139763962;8.096299192713;7.69194941159692;2.40043270721479;2.87833100150415;1.6391639097327;1.54926239002435;1.32281446719187;1.65175219708904;5.0239251079488;6.42077751957439;2.25872863356954;2.19946723342335;1.37797232400133;1.40392536640648;8.09218154408593;8.05854378705662;1.44650905763665;1.51821286313251;0.844996171387951;0.852097375293016;10.1946225111366;10.135737582742;3.41851660656203;3.58182546489717;5.06688995987447;5.74403138505556;2.29091700005106;2.04571606679433;7.35963285293353;7.81786519827815;5.06524288989057;4.81934077960451;7.57579365459945;7.92532440115969;2.77599178641418;2.49865425888971;0.813151347660287;1.10466775562267]</Vgm>
+         <Vwm>[0.000583531656615946;0.0700520339347762;0.00392472088820807;0.00726591022708897;0.0017082418517507;0.00312001200199165;18.3274487973212;0.0671579053753345;0.0925274146575897;6.01452189014748;6.52767209164621;11.5494934900903;11.9789868943057;147.810352555665;147.031088420218;0.0255436272076312;0.140993482205179;0.130033439851308;0;0;0.0493507778428634;0.100480386288177;1.01747212201759;0.95907189903661;0.307083532126015;0.303488224364654;1.7147595107311;2.18190011836141;3.31492560392495;3.52261580673168;0;0;0.0799014816209863;1.20718109691712;0.351220170122691;0.352490765015656;0.00107294527698969;0.00541178545671392;0.165718283327202;0.276518706830128;0.139097004799506;0.127459312860066;0.143360549720537;0.19151602831358;1.58218017366945;1.26206130660865;0.788958319427957;1.00451208349038;0.359544907926698;0.256523336877282;1.01320858723534;1.13286080880852;0.104254517857056;0.0711390967598453;0.112579255643182;0.139257004971166;0.19465486430906;0.283954029726301;0.812290172318978;0.767066468958065;0.583042231926948;0.414754528474126;1.08271473393313;1.5857331270476;1.99250645453493;1.55300830266191;1.98529701752212;1.66454284608577;0.223346738328739;0.200259591630994;0.485093624044866;0.345389559054223;0.139835830298603;0.196988989576533;1.93401682024028;2.46345885254831;0.918417634558939;0.986036718029334;0.415399240121243;0.796652461192788;0.0636614205488785;0.124169887616783;0.463422953799719;0.524679655734889;0.618948256244498;0.654007212817785;2.16556123658958;1.89445902204602;0.884069268317064;0.979335514490833;0.866666847435632;0.927495315597878;0.303158808671817;0.308641183737541;0.135769931783824;0.12843343311002;0.467470027033544;0.393225036490341;1.54752593069862;1.26916721720052;0.30572352409547;0.322227117589525;0.0873603353405079;0.0689226175088104;0.164960632439864;0.235327961810357;1.71367244467843;2.01429477638447;0.382721466224217;0.420048667485247;0.0832426726049616;0.139642888111517;2.46275767062841;2.59830172412848;0.149134689246637;0.170744184534915;0.0872709224890311;0.149407630553954;1.81314577234905;1.74391727396725;0.635771850063991;0.849669138372983;1.04616871305062;1.24485653478887;0.626882401825229;0.729198086467356;2.1117069085435;1.92392266442959;0.773033551726257;0.800403066980891;0.782002997565325;0.755974662279714;0.498434850407168;0.399097999702367;0.192960740488188;0.298749381010976]</Vwm>
+      </data>
+   </neuromorphometrics>
+   <suit>
+      <ids>[1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;17;18;19;20;21;22;23;24;25;26;27;28]</ids>
+      <names>
+         <item>Left I IV</item>
+         <item>Right I IV</item>
+         <item>Left V</item>
+         <item>Right V</item>
+         <item>Left VI</item>
+         <item>Vermis VI</item>
+         <item>Right VI</item>
+         <item>Left CrusI</item>
+         <item>Vermis CrusI</item>
+         <item>Right CrusI</item>
+         <item>Left CrusII</item>
+         <item>Vermis CrusII</item>
+         <item>Right CrusII</item>
+         <item>Left VIIb</item>
+         <item>Vermis VIIb</item>
+         <item>Right VIIb</item>
+         <item>Left VIIIa</item>
+         <item>Vermis VIIIa</item>
+         <item>Right VIIIa</item>
+         <item>Left VIIIb</item>
+         <item>Vermis VIIIb</item>
+         <item>Right VIIIb</item>
+         <item>Left IX</item>
+         <item>Vermis IX</item>
+         <item>Right IX</item>
+         <item>Left X</item>
+         <item>Vermis X</item>
+         <item>Right X</item>
+      </names>
+      <version>2166</version>
+      <data>
+         <Vgm>[2.03732543445411;2.63919597065138;2.86104152434224;3.29917966789861;6.10150566910346;1.1088183581921;6.03975013742949;7.97732931475214;0.00122824001354343;7.86652888849546;7.38055055934989;0.248189184993341;7.05654930840331;4.27669398597306;0.132339329325245;4.36389902307225;4.07410026959316;0.719310987307285;3.89800547529154;2.95099010478534;0.439479326305961;3.01661858398038;2.41461158261012;0.594482270683061;2.62329943621298;0.376410852217832;0.203501955245462;0.398429759967766]</Vgm>
+         <Vwm>[0.725268660626841;0.793038333519383;1.0997736246582;0.855047984550134;1.83822821618659;0.285525800477357;1.35797697054413;1.64705101520496;0;1.61808620002996;1.6233756297704;0.0522590240576733;0.947438924790018;0.652247207478406;0.0164753574322971;0.709108601509176;0.413681586093933;0.278349303128567;0.453578207721982;0.617889428488765;0.0417507485173769;0.349667224205552;0.594712866096392;0.0673884938327761;0.562590391701324;0.138569942530542;0.0134071102232803;0.125699304909994]</Vwm>
+      </data>
+   </suit>
+   <thalamic_nuclei>
+      <ids>[1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;17;18;19;20;21;22]</ids>
+      <names>
+         <item>lAnteroventral</item>
+         <item>lVentral_Anterior</item>
+         <item>lVentral_Lateral_Anterior</item>
+         <item>lVentral_Lateral_Posterior</item>
+         <item>lVentral_Posterolateral</item>
+         <item>lPulvinar</item>
+         <item>lLateral_Geniculate</item>
+         <item>lMedial_Geniculate</item>
+         <item>lCentromedian</item>
+         <item>lMediodorsal</item>
+         <item>lHabenula</item>
+         <item>rAnteroventral</item>
+         <item>rVentral_Anterior</item>
+         <item>rVentral_Lateral_Anterior</item>
+         <item>rVentral_Lateral_Posterior</item>
+         <item>rVentral_Posterolateral</item>
+         <item>rPulvinar</item>
+         <item>rLateral_Geniculate</item>
+         <item>rMedial_Geniculate</item>
+         <item>rCentromedian</item>
+         <item>rMediodorsal</item>
+         <item>rHabenula</item>
+      </names>
+      <version>2166</version>
+      <data>
+         <Vgm>[0;0.120052223522246;0;0.158184136320418;0.0291530529730483;0.532176152702799;0.150621753332343;1.11204660303473;0.018240069994928;0.042386044591457;0.0798591294863695;0.617352944388254;0.129129906456619;0.0100612151810715;0.169925358681766;0.0288565812000127;0.626755336355478;0.147440564737329;1.16301150251938;0.0264142191412196;0.0478401831483866;0.0982309645746798]</Vgm>
+      </data>
+   </thalamic_nuclei>
+</S>
