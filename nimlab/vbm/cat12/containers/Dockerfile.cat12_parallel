@@ -59,6 +59,3 @@ ENTRYPOINT ["/usr/local/bin/parallelized_segmentation.sh"]
 # docker build -t cat12:latest -f Dockerfile.cat12 .
 # To Run:
 # docker run --rm -v C:/Users/Calvin/Documents/Software/Research/nimlab/vbm/cat12/test:/data cat12:latest
-
-
-

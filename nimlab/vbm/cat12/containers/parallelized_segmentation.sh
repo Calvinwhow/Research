@@ -6,7 +6,7 @@ CAT12_DIR=$CAT_PATH
 MATLAB_RUNTIME=$MCRROOT
 
 # 1) Run the CAT12 standalone segmentation script
-cat_parallelize.sh -p 2 -c "cat_standalone.sh -b /opt/spm/standalone/cat_standalone_segment_calvin.m" /data/*.nii*
+cat_parallelize.sh -p 4 -c "cat_standalone.sh -b /opt/spm/standalone/cat_standalone_segment_calvin.m" /data/*.nii*
 
 # Wait for the segmentation to produce the output files
 while [ $(ls /data/mri/*mwp*.nii 2> /dev/null | wc -l) -eq 0 ]; do
@@ -17,6 +17,6 @@ done
 # 2) Run the CAT12 Standalone Smoothing 
 cat_parallelize.sh -p 2 -l /data/report -c "cat_standalone.sh -b /opt/spm/standalone/cat_standalone_smooth_calvin.m" /data/mri/*mwp*.nii
 
-# 3) Extract TIV for each file. Works erroneously during parallel workflow. 
-cat_standalone.sh -b /opt/spm/standalone/cat_standalone_get_TIV_calvin.m \
-                    /data/report/cat_*.xml 
+# # 3) Extract TIV for each file. Works erroneously during parallel workflow. 
+# cat_standalone.sh -b /opt/spm/standalone/cat_standalone_get_TIV_calvin.m \
+#                     /data/report/cat_*.xml 
