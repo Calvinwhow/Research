@@ -12,8 +12,8 @@ class CalvinStatsmodelsPalm(CalvinPalm):
     Subclass of CalvinPalm for handling PALM analysis with Statsmodels within a Jupyter Notebook.
     """
     
-    def __init__(self, input_csv_path, output_dir):
-        super().__init__(input_csv_path, output_dir)
+    def __init__(self, input_csv_path, output_dir, sheet=None):
+        super().__init__(input_csv_path, output_dir, sheet=sheet)
         
     def read_and_display_data(self):
         """

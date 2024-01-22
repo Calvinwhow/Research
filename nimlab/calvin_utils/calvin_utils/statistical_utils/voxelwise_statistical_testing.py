@@ -555,7 +555,7 @@ def voxelwise_interaction_t_stat(outcome_df, predictor_neuroimaging_dfs, predict
         return results_df['statistic'], results_df, temp_df
 #-----DEVELOPMENT --------------------------------
 
-def generate_r_map(matrix_df, mask_path=None, method='pearson'):
+def generate_r_map(matrix_df, mask_path=None, method='pearson', tqdm_on=True):
     '''
     This function receive a dataframe which contains clinical outcomes in the first column, 
     and connectivity values of voxels in the proceeding columns.
@@ -578,7 +578,8 @@ def generate_r_map(matrix_df, mask_path=None, method='pearson'):
 
     r_list = []
     p_list = []
-    for i in tqdm(range(0, matrix_df.shape[1])):
+    loop_range = tqdm(range(matrix_df.shape[1])) if tqdm_on else range(matrix_df.shape[1])
+    for _ in loop_range:
         if method=='pearson':
             r, p = pearsonr(outcomes_df, np.abs(matrix_df.iloc[:,i]))
         elif method=='spearman':

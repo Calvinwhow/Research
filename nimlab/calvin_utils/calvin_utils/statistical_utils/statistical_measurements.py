@@ -1,20 +1,25 @@
 import os
-import patsy 
 import re
+import patsy 
 import numpy as np
-from statsmodels.graphics.factorplots import interaction_plot
-
-
-import numpy as np
-import pandas as pds
-import matplotlib.pyplot as plt
-import seaborn as sns
 import statsmodels
-import statsmodels.api as sm
-from statsmodels.graphics.gofplots import ProbPlot
-from statsmodels.stats.outliers_influence import variance_inflation_factor
-from statsmodels.tools.tools import maybe_unwrap_results
+import seaborn as sns
 from typing import Type
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
+from statsmodels.graphics.gofplots import ProbPlot
+from statsmodels.tools.tools import maybe_unwrap_results
+from statsmodels.graphics.factorplots import interaction_plot
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+
+#Imports for Forest Plot
+import numpy as np
+import forestplot as fp
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+
 style_talk = 'seaborn-talk'    #refer to plt.style.available
 
 def calculate_vif(df):
@@ -696,3 +701,164 @@ class FlexibleInteractionPlot(FactorialPlot):
         plt.savefig(f"{out_dir}/interaction_plot.svg", bbox_inches='tight')
         print(f'Saved to {out_dir}/interaction_plot.svg')
         plt.show()
+
+class PartialRegressionPlot():
+    def __init__(self, model, out_dir=None, design_matrix=None, palette='Greys'):
+        self.out_dir = out_dir
+        self.model = model
+        self.design_matrix = design_matrix
+        if self.out_dir is not None:
+            os.makedirs(self.out_dir, exist_ok=True)
+        sns.set_palette(palette, 1, desat=1)
+        sns.set_style('white')
+
+    def plot_and_save_partregress(self):
+        # Adjust the size of the figure based on the number of columns
+        if self.design_matrix is not None:
+            num_cols = len(self.design_matrix.columns)
+            fig_size = ((num_cols*2), (num_cols*2))  
+            plt.figure(figsize=fig_size)
+            sm.graphics.plot_partregress_grid(self.model, fig=plt.gcf())
+        else:
+            sm.graphics.plot_partregress_grid(self.model)
+        
+        if self.out_dir:
+            # Save the figure in PNG and SVG formats
+            plt.savefig(f"{self.out_dir}/partial_regression_plot.png", bbox_inches='tight')
+            plt.savefig(f"{self.out_dir}/partial_regression_plot.svg", bbox_inches='tight')
+            print(f'Saved to {self.out_dir}/partial_regression_plot.svg')
+
+        # Display the plot
+        plt.show()
+        return plt
+    
+    def run(self):
+        plt = self.plot_and_save_partregress()
+        return plt
+
+class ForestPlot():
+    '''
+    This is a class which takes a statsmodels model object (from a fitted regression model)
+    and generates a forest plot of the regession coefficients for easy reading. 
+    
+    Parameters:
+    model : RegressionResults
+        The fitted regression model model from statsmodels.
+    table : Boolean
+        The True/False Boolean of whether you would like to present to forest plot as a table.
+    sig_difits : int
+        The number of significant digits to display. Defaults to 2. 
+    '''
+    def __init__(self, model, sig_digits=2, out_dir=None, table=False):
+        self.model=model
+        self.sig_digits=sig_digits
+        self.out_dir=out_dir
+        self.table=table
+
+    def table_prep(self):
+        '''
+        If we want to use a table with less than 6 regressors, the table output will be malformed. 
+        To address this, we fill the bottom of the self.data_for_plot dataframe with np.NaN 
+        to expand over 6 rows.
+        '''
+        if self.table and len(self.data_for_plot) < 7:
+            additional_rows_needed = 7 - len(self.data_for_plot)
+            
+            # Create a DataFrame with the additional rows filled with np.NaN
+            additional_rows = pd.DataFrame({
+                'estimate': [np.NaN] * additional_rows_needed,
+                'll': [np.NaN] * additional_rows_needed,
+                'hl': [np.NaN] * additional_rows_needed,
+                'label': [''] * additional_rows_needed,  # Assuming label can remain as an empty string
+                'pvalue': [np.NaN] * additional_rows_needed,
+                'group': [''] * additional_rows_needed
+            })
+
+            # Append the additional rows to the data_for_plot DataFrame
+            self.data_for_plot = pd.concat([self.data_for_plot, additional_rows], ignore_index=True)
+
+    def figure_saver(self):
+        '''
+        Method to save the forest plot.
+        '''
+        # Save the plot as PNG and SVG
+        if self.out_dir:
+            os.makedirs(self.out_dir, exist_ok=True)
+            self.fig.savefig(os.path.join(self.out_dir, "regression_forest_plot.png"), bbox_inches='tight')
+            self.fig.savefig(os.path.join(self.out_dir, "regression_forest_plot.svg"), bbox_inches='tight')
+            print(f'Saved to {self.out_dir} as regression_forest_plot.svg and .png')
+
+    def prepare_results(self):
+        '''
+        Method to extract results from a model and prepare a dataframe for forest plot generation
+        '''
+        # Extracting coefficients, confidence intervals, and p-values
+        params = self.model.params
+        conf = self.model.conf_int()
+        pvalues = self.model.pvalues
+        variables = self.model.params.index
+        group = ['Coefficient'[::]] * len(variables)
+
+        # Preparing the data for the forest plot
+        self.data_for_plot = pd.DataFrame({
+            'estimate': params,
+            'll': conf.iloc[:, 0],
+            'hl': conf.iloc[:, 1],
+            'label': variables,
+            'pvalue': pvalues,
+            'group': group
+        })
+        self.data_for_plot.reset_index(inplace=True, drop=True)
+
+    def create_and_display_forest_plot(self):
+        """
+        Generate and display a forest plot from the outputs of a regression model using forestplot.py.
+        """
+        # Generate the forest plot
+        ax = fp.forestplot(dataframe=self.data_for_plot,
+                #neccessary inputs
+                estimate="estimate",  # col containing estimated effect size 
+                varlabel="label",  # column containing variable label
+                
+                #Additional Plotting Inputs
+                ll="ll", hl="hl",  # columns containing conf. int. lower and higher limits
+                pval="pvalue",  # Column of p-value to be reported on right
+                # groupvar="group",
+                
+                #Specialized Annotation
+                # annote=["estimate"],  # columns to report on left of plot
+                # annoteheaders=["Est.(95% Conf. Int.)"],
+                # rightannote=["pvalue"],  # columns to report on right of plot 
+                # right_annoteheaders=["P-value"],
+
+                # Axis Labels
+                xlabel="Regression coefficient",
+                ylabel='Est.(95% Conf. Int.)',
+                
+                #   # Forest Plot Configuration
+                decimal_precision=self.sig_digits,
+                capitalize='capitalize',
+                color_alt_rows=False,  # Gray alternate rows
+                table=self.table,
+                flush=False,
+                
+                #   # Image Configuration
+                **{"marker": "D",  # set maker symbol as diamond
+                    "markersize": 150,  # adjust marker size
+                    "xlinestyle": (0, (10, 5)),  # long dash for x-reference line 
+                    "xlinecolor": "#808080",  # gray color for x-reference line
+                    "xtick_size": 12,  # adjust x-ticker fontsize
+                    'fontfamily': 'helvetica'
+                    }  
+            )
+        self.fig = ax.figure
+        self.fig.show()
+
+    def run(self):
+        '''
+        Orchestrator method.
+        '''
+        self.prepare_results()
+        self.table_prep()
+        self.create_and_display_forest_plot()
+        self.figure_saver()

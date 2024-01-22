@@ -7,6 +7,37 @@ from nilearn import image, plotting
 from nimlab import datasets as nimds
 from nibabel.affines import apply_affine
 
+
+def join_dataframes(matrix_df1, matrix_df2):
+    """
+    Joins two dataframes side by side and returns the merged dataframe.
+    
+    Parameters:
+    - matrix_df1 (DataFrame): The first dataframe to join.
+    - matrix_df2 (DataFrame): The second dataframe to join.
+    
+    Returns:
+    - DataFrame: The merged dataframe created by joining matrix_df1 and matrix_df2 side by side.
+    """
+    
+    # Reset indexes of the input dataframes
+    matrix_df1.reset_index()
+    matrix_df2.reset_index()
+    
+    # Print lengths of the dataframes
+    print('df1 len: ', len(matrix_df1), ' matrix_df2 len: ', len(matrix_df2))
+    
+    # Concatenate the dataframes side by side
+    merged_df = pd.concat([matrix_df1, matrix_df2], axis=1, ignore_index=False)
+    
+    # Print the number of non-zero elements in the last column
+    print('Nonzero values in last column: ', np.count_nonzero(merged_df.iloc[:,-1]))
+    try:
+        merged_df.pop('index')
+    except:
+        pass
+    return merged_df
+
 def handle_special_values(df):
     '''
     A quick and easy way of handling nans and inifinities in your data without significantly biasing the distribution.

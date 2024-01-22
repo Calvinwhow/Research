@@ -39,7 +39,7 @@ class CalvinPalm:
     """
     Class for handling PALM analysis workflow.
     """
-    def __init__(self, input_csv_path, output_dir):
+    def __init__(self, input_csv_path, output_dir, sheet=None):
         """
         Initialize the CalvinPalm class with input and output paths.
 
@@ -48,6 +48,7 @@ class CalvinPalm:
         - output_dir: str, path to the output directory
         """
         self.input_csv_path = input_csv_path
+        self.sheet = sheet
         self.output_dir = output_dir
         self.df = None
         self.design_matrix = None
@@ -61,7 +62,13 @@ class CalvinPalm:
         Returns:
         - DataFrame: Preprocessed data read from the CSV file.
         """
-        df = pd.read_csv(self.input_csv_path)
+        if self.sheet is not None:
+            try:
+                df = pd.read_excel(self.input_csv_path, sheet_name=self.sheet)
+            except Exception as e:
+                print(f'Error: {e}')
+        else:
+            df = pd.read_csv(self.input_csv_path)
         self.df = preprocess_colnames_for_regression(df)
         return self.df
     
