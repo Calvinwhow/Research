@@ -39,7 +39,7 @@ class CalvinPalm:
     """
     Class for handling PALM analysis workflow.
     """
-    def __init__(self, input_csv_path, output_dir):
+    def __init__(self, input_csv_path, output_dir, sheet=None):
         """
         Initialize the CalvinPalm class with input and output paths.
 
@@ -48,6 +48,7 @@ class CalvinPalm:
         - output_dir: str, path to the output directory
         """
         self.input_csv_path = input_csv_path
+        self.sheet = sheet
         self.output_dir = output_dir
         self.df = None
         self.design_matrix = None
@@ -61,7 +62,13 @@ class CalvinPalm:
         Returns:
         - DataFrame: Preprocessed data read from the CSV file.
         """
-        df = pd.read_csv(self.input_csv_path)
+        if self.sheet is not None:
+            try:
+                df = pd.read_excel(self.input_csv_path, sheet_name=self.sheet)
+            except Exception as e:
+                print(f'Error: {e}')
+        else:
+            df = pd.read_csv(self.input_csv_path)
         self.df = preprocess_colnames_for_regression(df)
         return self.df
     
@@ -171,7 +178,7 @@ class CalvinPalm:
 
         return output_path
 
-    def generate_basic_contrast_matrix(self, design_matrix):
+    def generate_basic_contrast_matrix(self, design_matrix, compare_to_intercept=False):
         """
         Generate a basic contrast matrix based on the design matrix and display it for potential user modification.
 
@@ -181,16 +188,27 @@ class CalvinPalm:
         Returns:
         - 2D NumPy array representing the default contrast matrix.
         """
-        contrast_matrix = np.eye(len(design_matrix.columns), len(design_matrix.columns))
-        for i in range(1, len(contrast_matrix)):
-            contrast_matrix[i, 0] = -1
+        contrast_matrix = np.eye(len(design_matrix.columns), len(design_matrix.columns), dtype=int)
+        if compare_to_intercept:
+            for i in range(1, len(contrast_matrix)):
+                contrast_matrix[i, 0] = -1
+                
         contrast_df = pd.DataFrame(data=contrast_matrix, columns=design_matrix.columns)
         
-        print("This is a basic contrast matrix set up to evaluate the significance of each variable.")
-        print("Copy it into a cell below and edit it for more control over your analysis.")
-        print(contrast_df)
+        # Convert DataFrame to a numpy array and then to a list of lists for clean printing
+        contrast_matrix_list = contrast_df.values.tolist()
+        print('Here is a basic contrast matrix set up to evaluate the significance of each variable.')
+        print('Here is an example of what your contrast matrix looks like as a dataframe: ')
+        display(contrast_df)
         
-        return contrast_matrix, contrast_df
+        print("Below is the same contrast matrix, but as an array.")
+        print("Copy it into a cell below and edit it for more control over your analysis.")
+        print("[")
+        for row in contrast_matrix_list:
+            print("    " + str(row) + ",")
+        print("]")
+        return contrast_matrix
+
 
     def finalize_contrast_matrix(self, design_matrix, contrast_matrix):
         """
@@ -771,3 +789,4 @@ class CalvinPalmSubmitter:
         print("\n")
 
         print("Time elapsed: " + str(round(end - start)) + " seconds")
+        

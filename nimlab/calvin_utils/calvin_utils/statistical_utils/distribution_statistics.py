@@ -3,6 +3,10 @@ import numpy as np
 from scipy.stats import t
 import numpy as np
 from tqdm import tqdm
+from statannotations.Annotator import Annotator
+import seaborn as sns
+import matplotlib.pyplot as plt
+import pandas as pd
 
 class BootstrappedDistributionStatistics:
     """
@@ -164,3 +168,48 @@ def bootstrap_distribution_statistics(data, func, func_args=None, bootstrap_samp
     }, index=['Bootstrapped 95-CIs'])
 
     return result_df
+
+
+def plot_with_annotation(dataframe, col1, col2, xlabel, ylabel, test_type, colours):
+    # Validate the test type
+    valid_tests = ['t-test_ind', 't-test_paired', 'Mann-Whitney', 'Wilcoxon']
+    if test_type not in valid_tests:
+        raise ValueError(f"Invalid test type. Choose from: {', '.join(valid_tests)}")
+    
+    # Extract series
+    series1 = dataframe[col1]
+    series2 = dataframe[col2]
+    
+    # Prepare data
+    data = pd.DataFrame({'Group': [col1] * len(series1) + [col2] * len(series2),
+                         'Value': series1.tolist() + series2.tolist()})
+    
+    # Pairs for comparison
+    pairs = [(col1, col2)]
+    
+    # Create figure
+    fig, ax = plt.subplots(figsize=(6.5, 4.5))
+    
+    sns.set_palette(colours, 2, desat=1)
+    
+    # Plot with seaborn
+    sns.boxplot(x='Group', y='Value', data=data, ax=ax)
+    
+    # Add annotations
+    annotator = Annotator(ax=ax,
+                          data=data,
+                          x='Group',
+                          y='Value',
+                          pairs=pairs,
+                          test=test_type,
+                          text_format='full',
+                          loc='inside',
+                          verbose=2)
+    
+    # Configure and annotate
+    _, corrected_results = annotator.configure(test=test_type, comparisons_correction="bonferroni").apply_and_annotate()
+    
+    # Label and show plot
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    return plt

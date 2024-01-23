@@ -1,0 +1,1 @@
+mri_surf2surf --srcsubject $sub --srcsurfval $3/$sub/surf/$hemi.thickness --trgsubject fsaverage --trgsurfval $4/$hemi.${sub}_thickness.fs7.gii --cortex --hemi $hemi
