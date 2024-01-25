@@ -1,0 +1,1 @@
+printf "choward12@bwh.harvard.edu\n73039\n *CYAwWQnpSLwU\n FSiZSmqurbBMM\n dx/0G84mNGBdFU9g25cMM50qzC1hbiH+4FvMsDPrvfs=\n" > /opt/freesurfer-6.0.1/license.txt

@@ -80,6 +80,13 @@ RUN apt-get update -qq \
          --exclude='freesurfer/trctrain' \
     && sed -i '$isource "/opt/freesurfer-6.0.1/SetUpFreeSurfer.sh"' "$ND_ENTRYPOINT"
 
+RUN echo "choward12@bwh.harvard.edu\n\
+73039\n\
+ *CYAwWQnpSLwU\n\
+ FSiZSmqurbBMM\n\
+ dx/0G84mNGBdFU9g25cMM50qzC1hbiH+4FvMsDPrvfs=\n"\
+ > /opt/freesurfer-6.0.1/license.txt
+
 ENV FSLDIR="/opt/fsl-6.0.3" \
     PATH="/opt/fsl-6.0.3/bin:$PATH" \
     FSLOUTPUTTYPE="NIFTI_GZ" \
