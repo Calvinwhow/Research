@@ -3,6 +3,37 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
+def find_zero_point_of_coefficients(statsmodel_model):
+    """
+    Calculate the values of independent variables at which the dependent variable
+    is zero, based on the coefficients from a fitted statsmodels regression model.
+
+    Parameters:
+    statsmodel_model (RegressionResultsWrapper): A fitted statsmodels regression model.
+
+    Returns:
+    dict: A dictionary where keys are variable names and values are the calculated
+          points at which the dependent variable is zero for each coefficient. 
+          If a coefficient is zero, the corresponding value is None, as the
+          zero point is undefined.
+    """
+    # Extracting the coefficients
+    coefficients = statsmodel_model.params
+
+    # Calculating the x-value at which y is zero for each coefficient
+    # Excluding the intercept (usually the first coefficient)
+    x_values = {}
+    for variable in coefficients.index[1:]:  # Skip the intercept
+        coefficient = coefficients[variable]
+        intercept = coefficients[0]
+        if coefficient != 0:
+            x_value = -intercept / coefficient
+            x_values[variable] = x_value
+        else:
+            x_values[variable] = None  # Undefined if coefficient is 0
+
+    return x_values
+
 def saddle_binarization(data_df, 
                     x_one, x_one_under_mean, x_one_over_mean, x_one_split_point,
                     x_two, x_two_under_mean, x_two_over_mean, x_two_split_point,
