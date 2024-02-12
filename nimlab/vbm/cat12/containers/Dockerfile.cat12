@@ -2,11 +2,7 @@ FROM ubuntu:focal-20210416
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-<<<<<<< HEAD
 # 1) set the working directory
-=======
-# set the working directory
->>>>>>> ecc17156da7c9aae3c91cc71ed75bfd6a2365754
 WORKDIR /root
 
 # 2) install dependencies and prereqs
@@ -41,7 +37,6 @@ RUN wget --progress=bar:force -P /tmp http://www.neuro.uni-jena.de/cat12/${CAT_F
  && cp -v ${CAT_PATH}/cat_long_main.txt ${CAT_PATH}/cat_long_main.m \
  && rm -rf /tmp/*
 ENV PATH="${PATH}:/opt/spm/standalone"
-<<<<<<< HEAD
 ENV SPMROOT /opt/spm
 
 # 5) Mount Necessary Scripts
@@ -64,6 +59,3 @@ ENTRYPOINT ["/usr/local/bin/run_segmentation.sh"]
 # docker build -t cat12:latest -f Dockerfile.cat12 .
 # To Run:
 # docker run --rm -v C:/Users/Calvin/Documents/Software/Research/nimlab/vbm/cat12/test:/data cat12:latest
-=======
-ENV SPMROOT /opt/spm
->>>>>>> ecc17156da7c9aae3c91cc71ed75bfd6a2365754
