@@ -1,0 +1,1 @@
+cat /opt/freesurfer-6.0.1/license.txt
