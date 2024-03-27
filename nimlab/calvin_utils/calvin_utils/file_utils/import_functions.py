@@ -18,7 +18,9 @@ import numpy as np
 import pandas as pd
 import nibabel as nib
 from glob import glob
+from tqdm import tqdm
 from nilearn import image
+from calvin_utils.nifti_utils.generate_nifti import view_and_save_nifti
 
 class GiiNiiFileImport:
     """
@@ -234,7 +236,7 @@ class GiiNiiFileImport:
         if self.import_path is None:
             raise ValueError ("Argument file_column is None. Please specify file_column='column_storing_file_paths.")
         self.paths = pd.read_csv(self.import_path)[self.file_column].tolist()
-        return self.import_matrices()
+        return self.import_matrices(self.paths)
 
     def import_from_folder(self):
         print(f'Attempting to import from: {self.import_path}/{self.file_pattern}')
@@ -242,6 +244,7 @@ class GiiNiiFileImport:
             raise ValueError ("Argument file_pattern is empty. Please specify file_pattern='*my_file*patter.nii.gz'")
         glob_path = os.path.join(self.import_path, self.file_pattern)
         file_paths = glob(glob_path)
+        self.file_paths = file_paths
         return self.import_matrices(file_paths)
 
     def detect_input_type(self):
@@ -273,7 +276,19 @@ class GiiNiiFileImport:
             return self.import_from_folder()
         else:
             raise ValueError("Invalid input type")
-
+        
+    @staticmethod
+    def save_files(dataframe, file_paths, dry_run=True, file_suffix=None):
+        """
+        Convenience saving function. Allows saving files after acting upon them. 
+        """
+        for i, file_path in tqdm(enumerate(file_paths), desc='Saving files'):
+            out_dir = os.path.dirname(file_path)
+            nifti_name = os.path.splitext(os.path.basename(file_path))[0] + (file_suffix if file_suffix is not None else '')
+            if dry_run:
+                print(f"Saving to: {os.path.join(out_dir, nifti_name)}")
+            else:
+                view_and_save_nifti(dataframe.iloc[:, i], out_dir=out_dir, output_name=nifti_name, silent=True)
     
     def run(self):
         self.import_data_based_on_type()

@@ -15,7 +15,7 @@ from nilearn.image import resample_to_img
 from nilearn import image
 import re
 
-def nifti_from_matrix(matrix, output_file, ref_file=None, use_reference=True, reference='MNI', use_affine=False, affine='MNI', output_name=None):
+def nifti_from_matrix(matrix, output_file, ref_file=None, use_reference=True, reference='MNI', use_affine=False, affine='MNI', output_name=None, silent=False):
     """Converts a flattened matrix to a NIfTI file using the given affine matrix.
 
     Args:
@@ -61,10 +61,11 @@ def nifti_from_matrix(matrix, output_file, ref_file=None, use_reference=True, re
     
     # Save the image to the output file
     if output_name is not None:
-        img.to_filename(output_file+f'/{output_name}_generated_nifti.nii')
+        img.to_filename(os.path.join(output_file, f'{output_name}.nii'))
     else:
-        img.to_filename(output_file+'/generated_nifti.nii')
-    print('Image saved to: \n', output_file)
+        img.to_filename(os.path.join(output_file, 'generated_nifti.nii'))
+    if silent==False:
+        print('Image saved to: \n', output_file)
     return img
     
 def generate_concentric_spherical_roi(subject, x, y, z, out_dir, max_radius=12):
@@ -243,11 +244,14 @@ def add_matrices_together(folder):
     summed_matrix = matrices_df.sum(axis=1)
     return summed_matrix
 
-def view_and_save_nifti(matrix, out_dir, output_name=None):
-    img = nifti_from_matrix(matrix, output_file=out_dir, output_name=output_name)
-    mask = nimds.get_img("mni_icbm152")
-    ovr_html1 = plotting.view_img(img, cut_coords=(0,0,0), black_bg=False, opacity=.75, cmap='ocean_hot')
-    return ovr_html1
+def view_and_save_nifti(matrix, out_dir, output_name=None, silent=False):
+    img = nifti_from_matrix(matrix, output_file=out_dir, output_name=output_name, silent=silent)
+    if silent:
+        return None
+    else:
+        mask = nimds.get_img("mni_icbm152")
+        ovr_html1 = plotting.view_img(img, cut_coords=(0,0,0), black_bg=False, opacity=.75, cmap='ocean_hot')
+        return ovr_html1
 
 def merge_niftis_in_folder(folder):
     added_matrces = add_matrices_together(folder)

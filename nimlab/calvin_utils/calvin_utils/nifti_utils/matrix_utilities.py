@@ -7,6 +7,39 @@ from nilearn import image, plotting
 from nimlab import datasets as nimds
 from nibabel.affines import apply_affine
 
+import numpy as np
+import pandas as pd
+
+def remove_unstable_values(df, posinf_val, neginf_val):
+    """
+    Removes unstable values from a DataFrame by setting:
+    - NaNs to 0
+    - Positive infinity to 'posinf_val'
+    - Negative infinity to 'neginf_val'
+
+    Parameters:
+    - df: The input DataFrame from which to remove unstable values.
+    - posinf_val: The value to use to replace positive infinity.
+    - neginf_val: The value to use to replace negative infinity.
+
+    Returns:
+    - A DataFrame with unstable values replaced as specified.
+    
+    Example usage:
+    # Assuming 'matrix_df' is your original DataFrame
+    posinf_replacement_value = 1e6  # Example value for positive infinity replacement
+    neginf_replacement_value = -1e6  # Example value for negative infinity replacement
+
+    cleaned_df = remove_unstable_values(matrix_df, posinf_replacement_value, neginf_replacement_value)
+    print(cleaned_df)
+    """
+    # Replace NaNs with 0
+    df_cleaned = df.fillna(0)
+
+    # Replace positive and negative infinity
+    df_cleaned = df_cleaned.replace([np.inf, -np.inf], [posinf_val, neginf_val])
+
+    return df_cleaned
 
 def join_dataframes(matrix_df1, matrix_df2):
     """

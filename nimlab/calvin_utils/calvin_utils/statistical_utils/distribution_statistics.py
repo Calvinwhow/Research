@@ -213,3 +213,32 @@ def plot_with_annotation(dataframe, col1, col2, xlabel, ylabel, test_type, colou
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     return plt
+
+def invert_distribution(values):
+    """
+    Transform a distribution of values by inverting or normalizing them.
+
+    Parameters:
+    - values (numpy.array): A numpy array containing the raw values to be transformed.
+    - invert (bool, optional): A boolean flag that determines the type of transformation. 
+      If True, the distribution is inverted. If False, the distribution is normalized. 
+      Defaults to False.
+
+    Returns:
+    - numpy.array: The transformed values.
+
+    """
+
+    # Invert the distribution
+    min_value = np.min(values)
+    max_value = np.max(values)
+    transformed_values = max_value + min_value - values
+
+    return transformed_values
+
+def normalize_distribution(values):
+    # Normalize the distribution
+    min_value = np.min(values)
+    max_value = np.max(values)
+    transformed_values = (values - min_value) / (max_value - min_value)
+    return transformed_values
