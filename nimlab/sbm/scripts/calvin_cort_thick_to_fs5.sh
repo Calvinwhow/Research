@@ -2,6 +2,7 @@
 # This script processes brain imaging data within a a BIDS directory that was mounted to a Dockerfile.
 
 ROOTDIR="/data" 
+FWHM=6
 
 # Tell freesurfer where the subjects are
 export SUBJECTS_DIR=/data
@@ -34,8 +35,9 @@ for dir in $ROOTDIR/*; do
             --srcsubject $sub \
             --srcsurfval $ROOTDIR/$sub/surf/$hemi.thickness \
             --trgsubject fsaverage5 \
-            --trgsurfval $ROOTDIR/$sub/surf/$hemi.${sub}_thickness.fs5.gii \
-            --hemi $hemi
+            --trgsurfval $ROOTDIR/$sub/surf/$hemi.${sub}_thickness.s${FWHM}.fs5.gii \
+            --hemi $hemi \
+            --fwhm $FWHM
         done
     fi
 done
