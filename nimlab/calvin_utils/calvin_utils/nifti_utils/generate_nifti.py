@@ -249,7 +249,7 @@ def view_and_save_nifti(matrix, out_dir, output_name=None, silent=False):
     if silent:
         return None
     else:
-        mask = nimds.get_img("mni_icbm152")
+        # mask = nimds.get_img("mni_icbm152")
         ovr_html1 = plotting.view_img(img, cut_coords=(0,0,0), black_bg=False, opacity=.75, cmap='ocean_hot')
         return ovr_html1
 
