@@ -579,7 +579,7 @@ def generate_r_map(matrix_df, mask_path=None, method='pearson', tqdm_on=True):
     r_list = []
     p_list = []
     loop_range = tqdm(range(matrix_df.shape[1])) if tqdm_on else range(matrix_df.shape[1])
-    for _ in loop_range:
+    for i in loop_range:
         if method=='pearson':
             r, p = pearsonr(outcomes_df, np.abs(matrix_df.iloc[:,i]))
         elif method=='spearman':

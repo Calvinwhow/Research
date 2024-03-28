@@ -2,12 +2,7 @@ version: '3'
 services:
   orchestrator:
     build:
-<<<<<<< HEAD
-      context: ./containers # Set working directory (vbm/cat12/)
-      dockerfile: Dockerfile.cat12
-=======
       context: . # Set working directory (vbm/cat12/)
       dockerfile: ./test/Dockerfile
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
->>>>>>> ecc17156da7c9aae3c91cc71ed75bfd6a2365754

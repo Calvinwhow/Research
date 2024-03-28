@@ -30,7 +30,7 @@ for dir in $ROOTDIR/*; do
                 echo "The file does not exist."
             fi
 
-            # Process thickness data for the subject and hemisphere using mri_surf2surf
+            # Process thickness data for the subject and hemisphere using mri_surf2surf. Can take a --fwhm parameter defining FWHM as int in mm. 
             mri_surf2surf \
             --srcsubject $sub \
             --srcsurfval $ROOTDIR/$sub/surf/$hemi.thickness \
