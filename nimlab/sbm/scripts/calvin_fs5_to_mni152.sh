@@ -6,16 +6,16 @@ FWHM="s6"
 # Tell freesurfer where the subjects are
 export SUBJECTS_DIR=/data
 
-# Place FSAverage5 with the subjects
-if [ ! -d "$ROOTDIR/fsaverage5" ]; then
-    cp -r /opt/freesurfer-6.0.1/subjects/fsaverage5 $ROOTDIR/fsaverage5
+# Place FSAverage7 with the subjects
+if [ ! -d "$ROOTDIR/fsaverage" ]; then
+    cp -r /opt/freesurfer-6.0.1/subjects/fsaverage $ROOTDIR/fsaverage
 fi
 
 for dir in $ROOTDIR/*; do
     if [ -d "$dir" ]; then
         sub=$(basename "$dir")  # Assign subject identifier from the first field of the line
         # Skip the fsaverage5 directory
-        if [ "$sub" == "fsaverage5" ]; then
+        if [ "$sub" == "fsaverage" ]; then
             continue
         fi
 
@@ -27,7 +27,7 @@ for dir in $ROOTDIR/*; do
 
         # Loop over hemispheres (left and right)
         for hemi in lh rh; do
-            # Method A: convert fsaverage5 gii to nii, then nii to mni152 nii
+            # Method A: convert fsaverage5 (now 7) gii to nii, then nii to mni152 nii
             # Step 1: Convert the fsaverage space image into a volume image (still in fsaverage space)
             mri_surf2vol \
             --surfval "$ROOTDIR/$sub/surf/$hemi.${sub}_thickness.${FWHM}.fs5.gii" \

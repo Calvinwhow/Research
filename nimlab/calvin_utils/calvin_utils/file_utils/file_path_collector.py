@@ -40,17 +40,6 @@ def glob_multiple_file_paths(dir_pattern_dict: dict, save: bool=False, save_path
     
     return master_df
 
-# Example usage:
-if __name__=='__main__':
-    dir_pattern_dict = {
-        '/path/to/first/root_dir': '*.nii',
-        '/path/to/second/root_dir': '*.nii.gz'
-        # Add more root_dir: file_pattern pairs
-    }
-    
-    master_df = glob_multiple_file_paths(dir_pattern_dict, save=True, save_path='master_file_paths.csv')
-
-
 def glob_file_paths(shared_base_path, shared_file_pattern='', save=False):
     glob_path  = os.path.join(shared_base_path, shared_file_pattern)
     
