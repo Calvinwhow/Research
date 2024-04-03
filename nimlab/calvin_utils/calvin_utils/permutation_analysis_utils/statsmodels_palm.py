@@ -101,7 +101,7 @@ class CalvinStatsmodelsPalm(CalvinPalm):
                 try:
                     self.df[col] = (self.df[col] - np.mean(self.df[col])) / np.std(self.df[col])
                 except Exception as e:
-                    print(f'Unable to standardize column {col}: {e}')
+                    print(f'Unable to standardize column {col}')
         return self.df
     
     def run_mixed_effects_model(self, y, X, groups, random_intercepts=True, random_slopes=None):

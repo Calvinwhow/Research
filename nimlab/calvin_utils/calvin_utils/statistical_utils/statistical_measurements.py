@@ -20,6 +20,10 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
+# For PDD
+import statsmodels.discrete.discrete_model as smd
+
+
 style_talk = 'seaborn-talk'    #refer to plt.style.available
 
 def calculate_vif(df):
@@ -347,6 +351,14 @@ def model_diagnostics(optimal_model):
 
 
 class EMMPlot():
+    """
+    This is a class which will take a formula, a dataframe, and a fitted model. 
+    It will calculate the mean of the predictors, and then hold them all constant while allowing one to vary linearly over its range. 
+    It will then make predictions across this range, and we will then be able to see the isolated relationship between varied predictor and prediction. 
+    
+    EMMs refer to the means for each level of a categorical variable adjusted for other variables in the model. 
+    They are essentially adjusted means for groups after accounting for covariates in the model.
+    """
     def __init__(self, formula, data_df, model):
         self.formula = formula
         self.data_df = data_df
@@ -355,36 +367,27 @@ class EMMPlot():
     def extract_unique_variables(self):
         # Remove the response variable part of the formula
         _, predictors = self.formula.split('~')
-        
         # Identify categorical variables with 'C()' and mark them
         cat_vars = re.findall(r'C\((.*?)\)', predictors)
         cat_vars_dict = {var: 'categorical' for var in cat_vars}
-        
         # Remove the 'C()' from the categorical variables
         predictors_no_cat = re.sub(r'C\((.*?)\)', r'\1', predictors)
-        
         # Split based on '+' and ':' to separate all variables including those in interactions
         variables = re.split(r'\+|\*|\:|\-', predictors_no_cat)
-        
         # Remove any white spaces and strip each variable name
         variables = [var.strip() for var in variables]
-        
         # Remove duplicates while preserving order by converting to a dict and back to list
         unique_vars = list(dict.fromkeys(variables))
-        
         # Remove empty strings that may have resulted from stripping
         unique_vars = [var for var in unique_vars if var]
-        
         # Mark the remaining variables as continuous
         unique_vars_dict = {var: 'continuous' for var in unique_vars if var not in cat_vars_dict}
-        
         # Combine the dictionaries
         vars_dict = {**cat_vars_dict, **unique_vars_dict}
-        
         # Convert the dictionary to a DataFrame
         vars_df = pd.DataFrame(list(vars_dict.items()), columns=['Variable', 'Type'])
         self.variables_df = vars_df
-    
+            
     def create_emm_df(self, plus_2_stdev=False, minus_2_stdev=False):
         # Create a new DataFrame to store the EMM data
         emm_df = pd.DataFrame()
@@ -422,9 +425,7 @@ class EMMPlot():
 
                 # Add the mean values to the corresponding rows in emm_df
                 emm_df[variable] = mean_values
-
         self.emm_df = emm_df
-
     
     def define_design_matrix(self):
         """
@@ -862,3 +863,181 @@ class ForestPlot():
         self.table_prep()
         self.create_and_display_forest_plot()
         self.figure_saver()
+        
+class PartialDependencePlot(EMMPlot):
+    """
+    This is a partial dependence plot class. 
+    It will hold all variables except one at their means, and vary the last across its range in incremental steps. 
+    It will then make predictions, seeing how the prediction changes as a a funciton of this one variable.
+    
+    This class is generated for use in logistic regressions. 
+    It will create a dictionary containing one dataframe per each classification.
+    Each dataframe will contain the predictions for each classification and the dynamic range of data. 
+    """
+    def __init__(self, formula, data_df, model, outcomes_df=None, data_range=None, out_dir=None, marginal_method='mean'):
+        """
+        Args:
+            formula: str
+                - this is the formula provided to the regression method 
+            data_df: pd.DataFrame
+                - this is the dataframe which was contains all your regressors and your observations.
+            model: StatsModels.Model instance
+                - this is the model which was fitted to the regression method
+            outcomes_df: pd.DataFrame (Optional)
+                - this is the dataframe which contains the observations. 
+            data_range: tuple (optional)
+                - This specifies the maximum and minimum values to vary the variable of interest over. 
+                    If not entered, will default to minimum and maximum values of the variable. 
+            out_dir: string (optional)
+                - If set, this will be the directory where the figures are saved. 
+            marginal_method = str | mean | min | max | absmin | absmax
+                - This determines how we will hold all variables aside from the variable of interest.
+                    We can set them to their mean, their minimum, or their maximum. 
+                    absmin and absmax will set the value to the absolute lowest value in the dynamic range. 
+                    min and max will set the value to the min or max of the observed input value for that variable.
+        """
+        super().__init__(formula, data_df, model)
+        self.outcomes_df = outcomes_df
+        self.results_dict = dict()
+        self.data_range = data_range
+        self.out_dir = out_dir
+        self.marginal_method = marginal_method
+        
+    def partial_dependence_plots(self):
+        """
+        This method will create a figure for each classification. Each figure will include lines for each variable,
+        showing how the prediction changes with the variable, allowing for comparison of variable effects within each classification.
+        """
+        num_variables = len(self.variables_df['Variable'])
+    
+        # Selecting the color palette by number of variables
+        if num_variables <= 10:
+            palette = sns.color_palette("tab10", n_colors=num_variables)
+        elif num_variables <= 20:
+            palette = sns.color_palette("tab20", n_colors=num_variables)
+        else:
+            # Creating a colormap for more than 20 variables
+            cmap = plt.cm.get_cmap('hsv', num_variables)
+            palette = [cmap(i) for i in range(num_variables)]
+            
+        # Generate the Plots
+        for classification, results_df in self.results_dict.items():
+            plt.figure(figsize=(10, 6))  # Adjust the figure size as needed
+            plt.title(f"Partial Dependence Plot for {classification}")
+            
+            for variable in self.variables_df['Variable']:
+                sns.lineplot(x=results_df[f'{variable}'], y=results_df[f'{variable}_predictions'], label=variable, palette=palette)
+            
+            plt.xlabel("Variable Value")
+            plt.ylabel("Predicted Probability")
+            plt.legend(title="Variable")
+            if self.out_dir is not None:
+                plt.savefig(os.path.join(self.out_dir, f'pdp_{classification}.svg'))
+                plt.savefig(os.path.join(self.out_dir, f'pdp_{classification}.png'))
+            plt.show()
+            
+            
+    def partial_dependence_prediction(self, partial_dependence_df, variable_name, prediction_index):
+        """
+        This method will take the partial_dependence_df and make a prediction on it.
+        The predictions will be stored in self.results_df, as will the range of the continuous variable. 
+        
+        The hard part, especially for a multinomial logit, is that each prediction yields N predictions. 
+        The maximal prediction is the model's 'choice', but this is not correct for partial dependence. 
+        We need to find the value of the prediction at the index of our predictor. 
+        """
+        
+        # This will return a pandas dataframe of predictions
+        predictions = self.model.predict(partial_dependence_df)
+        
+        # This gets the prediction associated with our class of interest
+        self.results_df[f'{variable_name}_predictions'] = predictions.loc[:, prediction_index]
+        self.results_df[variable_name] = partial_dependence_df.loc[:, variable_name]
+
+    def partial_dependence_df(self, variable_name:str, variable_type:str):
+        """
+        This method will take the variable, the type, and create a new dataframe based upon it. 
+        This dataframe will be used for predictions.
+        
+        Essentially, the variable of interest varies from min to max in 100 steps. 
+        All of the other variables are held at their means. 
+        For categorical features, the partial dependence is very easy to calculate. 
+        
+        TODO:
+        For each of the categories, we get a PDP estimate by forcing all data instances to have the same category.
+        For example, if we look at the bike rental dataset and are interested in the partial dependence plot for the season, 
+        we get four numbers, one for each season. To compute the value for “summer”, we replace the season of all data instances
+        with “summer” and average the predictions.
+        """
+        if variable_type != 'continuous':
+            raise ValueError(f"{variable_type} variables are not supported yet. Please use continuous variables instead.")
+        
+        # Intialize the dataframe
+        partial_dependence_df = pd.DataFrame(np.nan, index=range(100), columns=self.variables_df['Variable'])
+        partial_dependence_df['Intercept'] = 1
+        for variable in self.variables_df['Variable']:
+            print(variable)
+            # Range our variable of interest across a dynamic range. 
+            if variable==variable_name:
+                if self.data_range is None: 
+                    partial_dependence_df[variable_name] = np.linspace(np.min(self.data_df[variable_name]), np.max(self.data_df[variable_name]), 100)
+                else:
+                    partial_dependence_df[variable_name] = np.linspace(self.data_range[0], self.data_range[1], 100)
+            # Hold variables which are not our variables of interest constant at mean
+            else:
+                if self.marginal_method == 'mean':
+                    partial_dependence_df[variable] = np.mean(self.data_df[variable])  
+                elif self.marginal_method == 'min':
+                    partial_dependence_df[variable] = np.min(self.data_df[variable])  
+                elif self.marginal_method == 'max':
+                    partial_dependence_df[variable] = np.max(self.data_df[variable])  
+                elif self.marginal_method == 'absmin':
+                    partial_dependence_df[variable] = self.data_range[0] if self.data_range is not None else np.min(self.data_df)  
+                elif self.marginal_method == 'absmax':
+                    partial_dependence_df[variable] = self.data_range[1] if self.data_range is not None else np.max(self.data_df)  
+                else:
+                    raise TypeError("Invalid marginal method: %s" % self.marginal_method)       
+        
+        return partial_dependence_df   
+    
+    def orchestrate_marginal_predictions(self):
+        """
+        This method is going to iterate over each variable, getting its estimated marginal means. 
+        We will pass each variable, identifying it as the variable to vary. 
+        We will flag the type of the variable, continuous or categorical. 
+        
+        Notes:
+        We need to generate a dataframe of results for each potential class of observations. 
+        There are only >1  classes of observations in  binomial logits.
+        There are only >2 classes of observations in multinomial logits and MANOVAs or GLMs with numerous prediction classes.
+        """
+        for i, observation in enumerate(self.outcomes_df.columns):
+            # Initialize a new DF for each classification
+            self.results_df = pd.DataFrame()
+            for index, row in self.variables_df.iterrows():
+                # Set up the Data
+                partial_dependence_df =  self.partial_dependence_df(row['Variable'], row['Type'])
+                # Predict the data and assign it to the results_df
+                self.partial_dependence_prediction(partial_dependence_df, row['Variable'], i)
+            # Store results DF for this classification
+            self.results_dict[observation] = self.results_df
+            
+    def validate_model(self):
+        """
+        This is an initial check to make sure we are okay to begin. 
+        If the appropriate data for the model has been entered, we will then relate the index of predictions
+        to the class of the prediction. 
+        """
+        if isinstance(self.model, smd.MNLogit) or isinstance(self.model, smd.Logit):
+            if self.outcomes_df is None:
+                raise TypeError("Logistic model detected, but outcomes_df is none. \n You must enter the dataframe containing the observations. ")
+                    
+    def run(self):
+        """
+        Orchestration Method
+        """
+        self.validate_model()
+        self.extract_unique_variables()
+        self.orchestrate_marginal_predictions()
+        self.partial_dependence_plots()
+        
