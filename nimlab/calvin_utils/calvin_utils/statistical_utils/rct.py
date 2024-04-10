@@ -6,12 +6,13 @@ import numpy as np
 from scipy.stats import ranksums
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
+import os
 
 def get_sem(group):
     return group.sem()
 
 class RCTPlotter:
-    def __init__(self, data, obs_cols, arm_col, category_col=None):
+    def __init__(self, data, obs_cols, arm_col, category_col=None, out_dir=None):
         """
         Initialize the RCTPlotter class.
         
@@ -25,6 +26,7 @@ class RCTPlotter:
         self.obs_cols = obs_cols
         self.arm_col = arm_col
         self.category_col = category_col
+        self.out_dir = out_dir
         
         if category_col is None:
             self.categories = ['All']
@@ -60,6 +62,9 @@ class RCTPlotter:
             ax.set_xlabel('Timepoints')
             ax.set_ylabel('Outcome Measure')
             ax.legend()
+            if self.out_dir:
+                plt.savefig(os.path.join(self.out_dir, f"{category}rct_plot.png"))
+                plt.savefig(os.path.join(self.out_dir, f"{category}rasterized_probabilities.svg"))
             plt.show()  # Show the plot for the current category
             
     def perform_ttest(self):

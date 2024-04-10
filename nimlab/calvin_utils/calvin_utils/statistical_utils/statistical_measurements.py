@@ -358,6 +358,14 @@ class EMMPlot():
     
     EMMs refer to the means for each level of a categorical variable adjusted for other variables in the model. 
     They are essentially adjusted means for groups after accounting for covariates in the model.
+    
+    NOTE
+    There are 2 ways of generating EMMs, and will generate slightly different results
+        - See this manuscript, which advocates for the 'observed value approach': https://gvpt.umd.edu/sites/gvpt.umd.edu/files/pubs/Hanmer%20and%20Kalkan%20AJPS%20Behind%20the%20Curve.pdf
+    1) To use the 'observed values approach' is to make predictions on the outcomes based on the actual data, then average the preidctions
+    2) To use the 'average case approach' is to average the actual data together, then make a prediction on it. 
+        This code uses the 'average case approach'.
+        Th
     """
     def __init__(self, formula, data_df, model):
         self.formula = formula
@@ -778,15 +786,15 @@ class ForestPlot():
             # Append the additional rows to the data_for_plot DataFrame
             self.data_for_plot = pd.concat([self.data_for_plot, additional_rows], ignore_index=True)
 
-    def figure_saver(self):
+    def figure_saver(self, name=''):
         '''
         Method to save the forest plot.
         '''
         # Save the plot as PNG and SVG
         if self.out_dir:
             os.makedirs(self.out_dir, exist_ok=True)
-            self.fig.savefig(os.path.join(self.out_dir, "regression_forest_plot.png"), bbox_inches='tight')
-            self.fig.savefig(os.path.join(self.out_dir, "regression_forest_plot.svg"), bbox_inches='tight')
+            self.fig.savefig(os.path.join(self.out_dir, f"{name}_regression_forest_plot.png"), bbox_inches='tight')
+            self.fig.savefig(os.path.join(self.out_dir, f"{name}_regression_forest_plot.svg"), bbox_inches='tight')
             print(f'Saved to {self.out_dir} as regression_forest_plot.svg and .png')
 
     def prepare_results(self):
@@ -863,7 +871,40 @@ class ForestPlot():
         self.table_prep()
         self.create_and_display_forest_plot()
         self.figure_saver()
-        
+
+class MultinomialForestPlot(ForestPlot):
+    '''
+    This class takes a fitted multinomial statsmodels model object (MNLogit)
+    and generates a forest plot for the regression coefficients of each class
+    with respect to the reference class.
+    '''
+    def prepare_multinomial_results_and_plot(self):
+        # This will create a forest plot for each class in the multinomial model
+        for i in range(1, self.model.J):
+            # Conf intervals for this class
+            class_labels = self.model.conf_int().index.get_level_values(0).unique()
+            conf = self.model.conf_int().loc[class_labels[i-1]]
+            
+            # Coefficients, confidence intervals, and p-values for the i-th class vs reference
+            params = self.model.params.iloc[:, i - 1]
+
+            # Check if pvalues is a DataFrame and extract appropriately
+            pvalues = self.model.pvalues.iloc[:, i - 1] if isinstance(self.model.pvalues, pd.DataFrame) else self.model.pvalues
+
+            self.data_for_plot = pd.DataFrame({
+                'estimate': params,
+                'll': conf.iloc[:, 0],
+                'hl': conf.iloc[:, 1],
+                'label': params.index,
+                'pvalue': pvalues
+            })
+            self.create_and_display_forest_plot()
+            print("----Forest Plot For: " + class_labels[i-1] + " ----")
+            self.figure_saver(name=class_labels[i-1])
+            
+    def run(self):
+        self.prepare_multinomial_results_and_plot()
+   
 class PartialDependencePlot(EMMPlot):
     """
     This is a partial dependence plot class. 
@@ -874,7 +915,7 @@ class PartialDependencePlot(EMMPlot):
     It will create a dictionary containing one dataframe per each classification.
     Each dataframe will contain the predictions for each classification and the dynamic range of data. 
     """
-    def __init__(self, formula, data_df, model, outcomes_df=None, data_range=None, out_dir=None, marginal_method='mean'):
+    def __init__(self, formula, data_df, model, design_matrix, outcomes_df=None, data_range=None, out_dir=None, marginal_method='mean', debug=False):
         """
         Args:
             formula: str
@@ -883,6 +924,8 @@ class PartialDependencePlot(EMMPlot):
                 - this is the dataframe which was contains all your regressors and your observations.
             model: StatsModels.Model instance
                 - this is the model which was fitted to the regression method
+            design_matrix: pd.DataFrame
+                - This is the dataframe acting as the design matrix generated in my regression notebooks.
             outcomes_df: pd.DataFrame (Optional)
                 - this is the dataframe which contains the observations. 
             data_range: tuple (optional)
@@ -897,11 +940,13 @@ class PartialDependencePlot(EMMPlot):
                     min and max will set the value to the min or max of the observed input value for that variable.
         """
         super().__init__(formula, data_df, model)
+        self.design_matrix = design_matrix
         self.outcomes_df = outcomes_df
         self.results_dict = dict()
         self.data_range = data_range
         self.out_dir = out_dir
         self.marginal_method = marginal_method
+        self.debug = debug
         
     def partial_dependence_plots(self):
         """
@@ -913,12 +958,15 @@ class PartialDependencePlot(EMMPlot):
         # Selecting the color palette by number of variables
         if num_variables <= 10:
             palette = sns.color_palette("tab10", n_colors=num_variables)
+            sns.set_palette(palette, desat=1)
         elif num_variables <= 20:
             palette = sns.color_palette("tab20", n_colors=num_variables)
+            sns.set_palette(palette, desat=1)
         else:
             # Creating a colormap for more than 20 variables
             cmap = plt.cm.get_cmap('hsv', num_variables)
             palette = [cmap(i) for i in range(num_variables)]
+            sns.set_palette(palette, desat=1)
             
         # Generate the Plots
         for classification, results_df in self.results_dict.items():
@@ -936,7 +984,6 @@ class PartialDependencePlot(EMMPlot):
                 plt.savefig(os.path.join(self.out_dir, f'pdp_{classification}.png'))
             plt.show()
             
-            
     def partial_dependence_prediction(self, partial_dependence_df, variable_name, prediction_index):
         """
         This method will take the partial_dependence_df and make a prediction on it.
@@ -949,7 +996,6 @@ class PartialDependencePlot(EMMPlot):
         
         # This will return a pandas dataframe of predictions
         predictions = self.model.predict(partial_dependence_df)
-        
         # This gets the prediction associated with our class of interest
         self.results_df[f'{variable_name}_predictions'] = predictions.loc[:, prediction_index]
         self.results_df[variable_name] = partial_dependence_df.loc[:, variable_name]
@@ -976,7 +1022,6 @@ class PartialDependencePlot(EMMPlot):
         partial_dependence_df = pd.DataFrame(np.nan, index=range(100), columns=self.variables_df['Variable'])
         partial_dependence_df['Intercept'] = 1
         for variable in self.variables_df['Variable']:
-            print(variable)
             # Range our variable of interest across a dynamic range. 
             if variable==variable_name:
                 if self.data_range is None: 
@@ -997,7 +1042,7 @@ class PartialDependencePlot(EMMPlot):
                     partial_dependence_df[variable] = self.data_range[1] if self.data_range is not None else np.max(self.data_df)  
                 else:
                     raise TypeError("Invalid marginal method: %s" % self.marginal_method)       
-        
+        partial_dependence_df = partial_dependence_df.loc[:, self.design_matrix.columns]
         return partial_dependence_df   
     
     def orchestrate_marginal_predictions(self):
@@ -1012,11 +1057,12 @@ class PartialDependencePlot(EMMPlot):
         There are only >2 classes of observations in multinomial logits and MANOVAs or GLMs with numerous prediction classes.
         """
         for i, observation in enumerate(self.outcomes_df.columns):
+            print(f"{i}:{observation}")
             # Initialize a new DF for each classification
             self.results_df = pd.DataFrame()
             for index, row in self.variables_df.iterrows():
                 # Set up the Data
-                partial_dependence_df =  self.partial_dependence_df(row['Variable'], row['Type'])
+                partial_dependence_df = self.partial_dependence_df(row['Variable'], row['Type'])
                 # Predict the data and assign it to the results_df
                 self.partial_dependence_prediction(partial_dependence_df, row['Variable'], i)
             # Store results DF for this classification
@@ -1040,4 +1086,284 @@ class PartialDependencePlot(EMMPlot):
         self.extract_unique_variables()
         self.orchestrate_marginal_predictions()
         self.partial_dependence_plots()
+
+class ProfilePlot(EMMPlot):
+    """
+    The ProfilePlot class generates profile plots to visualize the effect of varying one or more predictor variables 
+    on the response variable, holding other variables constant. This class is particularly useful for exploring and 
+    presenting the relationship between predictors and the predicted outcome in a statistical model.
+
+    Attributes:
+        formula (str): The regression formula used in the model.
+        data_df (pd.DataFrame): The DataFrame containing the regressors and observations.
+        model (StatsModels.Model instance): The fitted statistical model.
+        marginal_scenarios_dict (dict): A dictionary specifying the categories (predictors) and their values to be 
+            used for generating marginal scenarios. For continuous variables, the value should be 'continuous', 
+            and for categorical variables, it should be a list of values to iterate over.
+            Example: {'age': 'continuous', 'gender': ['male', 'female'], 'dose': 'std'}
+        data_range (tuple, optional): Specifies the range (min, max) to vary continuous variables. If not provided, 
+            the range is derived from the data.
+        out_dir (str, optional): Directory path to save the generated plots.
+        marginal_method (str): Determines how non-focal variables are held constant (mean, min, max, etc.).
+        debug (bool): If True, enables debug mode for additional logging.
+
+    Methods:
+        set_palette: Sets the color palette for the plot based on the number of scenarios.
+        profile_plot: Generates a single profile plot with traces for each marginal prediction.
+        marginal_prediction: Makes predictions for a given design matrix and scenario, storing the results.
+        define_design_matrix: Constructs the design matrix from a given DataFrame based on the regression formula.
+        generate_marginal_scenario_dataframe: Modifies the data DataFrame according to the current scenario.
+        generate_scenarios: Generates all possible scenarios from `marginal_scenarios_dict`.
+        orchestrate_marginal_predictions: Orchestrates the generation of scenarios, prediction, and plotting.
+        run: Executes the orchestration method to generate and plot marginal predictions.
+
+    Notes:
+        - The `marginal_scenarios_dict` should be carefully set up to include all predictors you wish to analyze. 
+          Continuous variables should have the value 'continuous', and categorical variables should list all categories 
+          you wish to iterate over.
+        - Profile plots are useful for understanding the behavior of the model across different levels of one or more 
+          predictors. Each trace on the plot represents the predicted outcome as one predictor varies, holding others constant.
+        - Ensure that the `model` is compatible with the design matrices generated by this class.
+    
+    TODO:
+        -   Store the confidence intervals from the predictions. Plot them. 
+    """
+    def __init__(self, formula, data_df, model, marginal_scenarios_dict, data_range=None, out_dir=None, marginal_method='mean', debug=False):
+        """
+        init method
+        """
+        super().__init__(formula, data_df, model)
+        self.results_dict = dict()
+        self.data_range = data_range
+        self.out_dir = out_dir
+        self.marginal_method = marginal_method
+        self.marginal_scenarios_dict = marginal_scenarios_dict
+        self.debug = debug
+        self.results_df = pd.DataFrame()
         
+    def set_palette(self):
+        num_scenarios = len(self.marginal_scenarios)
+        if num_scenarios <= 10:
+            palette = "tab10"
+        elif num_scenarios <= 20:
+            palette = "tab20"
+        else:
+            cmap = plt.cm.get_cmap('hsv', num_scenarios)
+            palette = [cmap(i) for i in range(num_scenarios)]
+            sns.set_palette(palette, desat=1)
+        return palette
+    
+    def profile_plot(self):
+        """
+        This method will create a profile plot.
+        each marginal plot will have a trace for each marginal prediction. 
+        """
+        palette = self.set_palette()
+        plt.figure(figsize=(10, 6))  # Adjust the figure size as needed
+        plt.title(f"Profile Plot")
+        for marginal_scenario in self.marginal_scenarios:
+            scenario_label = "_".join([f"{k}={v}" for k, v in marginal_scenario.items()])
+            sns.lineplot(x=self.results_df[f'{scenario_label}_observations'], y=self.results_df[f'{scenario_label}_predictions'], label=scenario_label, palette=palette)
+            
+        plt.xlabel("Observed Value")
+        plt.ylabel("Predicted Value")
+        plt.legend(title="Variable")
+        if self.out_dir is not None:
+            plt.savefig(os.path.join(self.out_dir, f'profile_plot.svg'))
+            plt.savefig(os.path.join(self.out_dir, f'profile_plot.png'))
+        plt.show()
+
+    def marginal_prediction(self, marginal_design_matrix, marginal_scenario, continuous_values):
+        """
+        This method will take the marginal_design_matrix and make a prediction on it. 
+        It will store its results in a dataframe labelled by the marginal_scenario. 
+        """
+        try:
+            predictions = self.model.get_prediction(marginal_design_matrix)
+            scenario_label = "_".join([f"{k}={v}" for k, v in marginal_scenario.items()])
+            
+            self.results_df[f'{scenario_label}_predictions'] = predictions.predicted_mean
+            self.results_df[f'{scenario_label}_observations'] = continuous_values[0:len(predictions)]
+            
+            self.results_df[f'{scenario_label}_sem'] =  predictions.se_mean
+            
+            ci = predictions.conf_int()
+            self.results_df[f'{scenario_label}_ci_low'] = ci[:, 0]
+            self.results_df[f'{scenario_label}_ci_high'] = ci[:, 1]
+        except Exception as e:
+            print("Error occurred while using get_prediction method: " + str(e) + '\n Defalting to .predict() method. Losing estimate of error.')
+            # This will return a pandas dataframe of predictions
+            predictions = self.model.predict(marginal_design_matrix)
+            # This gets the prediction associated with our class of interest
+            scenario_label = "_".join([f"{k}={v}" for k, v in marginal_scenario.items()])
+            self.results_df[f'{scenario_label}_predictions'] = predictions
+            self.results_df[f'{scenario_label}_observations'] = continuous_values[0:len(predictions)]
+
+        
+    def define_design_matrix(self, marginal_df):
+        """
+        Defines the design matrix based on the patsy formula and returns it as a DataFrame.
+        
+        Parameters:
+        - marginal_df: DataFrame, the data frame from which to construct the design matrix
+        
+        Returns:
+        - Tuple containing the design matrix for the dependent variable and the design matrix for the independent variables.
+        """
+        y, X = patsy.dmatrices(self.formula, marginal_df, return_type='dataframe')
+        return y, X   
+    
+    def generate_marginal_scenario_dataframe(self, current_marginal_scenario):
+        """
+        Modify self.data_df based on the current scenario in current_marginal_scenario. For continuous keys,
+        set the column to a range between self.data_range[0] and self.data_range[1] in 100 steps.
+        """
+        # Make a copy of the original DataFrame
+        marginal_df = self.data_df.copy()
+        marginal_df = marginal_df.iloc[0:100,:]
+        # Iterate over each key-value pair in the current scenario
+        for key, value in current_marginal_scenario.items():
+            # print(k, v)
+            if value == 'continuous':
+                if self.data_range is not None:
+                    continuous_values = np.linspace(self.data_range[0], self.data_range[1], len(marginal_df))
+                else:
+                    continuous_values = np.linspace(self.data_df[key].min(), self.data_df[key].max(), len(marginal_df))
+                marginal_df[key] = continuous_values
+            else: 
+                marginal_df[key] = value
+        return marginal_df, continuous_values
+    
+    def generate_scenarios(self):
+        """
+        For each category, set it to one of its possible values, creating a scenario. 
+        Each scenario is a dictionary where keys are categories and values are the set values for those categories.
+        Pass each scenario as a dictionary to self.generate_design_matrix.
+        """
+        # Initialize a list to hold the scenarios
+        scenarios = [{}]
+
+        # Iterate over each category and its values in the dictionary
+        for category, values in self.marginal_scenarios_dict.items():
+            # Prepare the next set of scenarios
+            next_scenarios = []
+            # Handle continuous variables by setting a placeholder or a specific value
+            if values == 'continuous':
+                pass
+
+            # Expand the scenarios with this category's values
+            for scenario in scenarios:
+                for value in values:
+                    # Create a new scenario based on the existing one, with the current category set to the current value
+                    updated_scenario = scenario.copy()
+                    updated_scenario[category] = value
+                    next_scenarios.append(updated_scenario)
+
+            # Update the scenarios list with the expanded set of scenarios
+            scenarios = next_scenarios
+        self.marginal_scenarios = scenarios
+        
+    def orchestrate_marginal_predictions(self):
+        """
+        This method will take the dictionary specifying the marginal values and iterate over it.
+        It will have a design martrix created for each marginal dataframe. 
+        It will predict and store the marginal dataframe. 
+        """
+        self.generate_scenarios()
+        for marginal_scenario in self.marginal_scenarios:
+            marginal_df, continuous_values = self.generate_marginal_scenario_dataframe(marginal_scenario)
+            _, marginal_design_matrix = self.define_design_matrix(marginal_df)
+            self.marginal_prediction(marginal_design_matrix, marginal_scenario, continuous_values)
+        
+    def run(self):
+        self.orchestrate_marginal_predictions()
+        self.profile_plot()
+        
+class EMMPlotV2(ProfilePlot):
+    """
+    This is a class which will generate estimated marginal means.
+    Will use the average 'average case approach' is to average the actual data together, then make a prediction on it. 
+    Averages data together, then predicts the data. Stores the uncertainty about the prediction and plots it. 
+    Significance can use post-hoc testing to compare the predictions, or confidence intervals can infer prediction. 
+    
+    Attributes:
+        formula (str): The regression formula used in the model.
+        data_df (pd.DataFrame): The DataFrame containing the regressors and observations.
+        model (StatsModels.Model instance): The fitted statistical model.
+        marginal_scenarios_dict (dict): A dictionary specifying the categories (predictors) and their values to be 
+            used for generating marginal scenarios. For continuous variables, the value should be 'continuous', 
+            and for categorical variables, it should be a list of values to iterate over.
+            Example: {'age': 'mean', 'gender': ['male', 'female']}
+            - Mean will result in grabbig the mean value. 
+            - Std will result in grabbing the value at two standard deviations above and below. 
+            - Only set one value to mean or std. This is how we plot the x-axis. 
+        data_range (tuple, optional): Specifies the range (min, max) to vary continuous variables. If not provided, 
+            the range is derived from the data.
+        out_dir (str, optional): Directory path to save the generated plots.
+        marginal_method (str): Determines how non-focal variables are held constant (mean, min, max, etc.).
+        debug (bool): If True, enables debug mode for additional logging.
+        variance (str) 'sem' | 'ci': will either plot the confidence interval (95%) or the SEM on the mean.  
+        
+    Note:
+        - One of the keys (columns) must have a value called mean. This is critical. s.td also work
+    """
+    def __init__(self, *args, variance='sem', **kwargs):
+        super().__init__(*args, **kwargs)
+        self.variance=variance
+        
+    def emm_plot(self):
+        """
+        This method will create an estimated marginal mean plot.
+        Each marginal scenario will be represented by a dot for the predicted value,
+        with error bars representing the standard error of the mean (SEM).
+        """
+        palette = self.set_palette()
+        plt.figure(figsize=(10, 6))  # Adjust the figure size as needed
+        plt.title("Estimated Marginal Mean Plot")
+        plt.xlabel("Observed Value")
+        plt.ylabel("Predicted Value")
+
+        for marginal_scenario in self.marginal_scenarios:
+            scenario_label = "_".join([f"{k}={v}" for k, v in marginal_scenario.items()])
+            observations = self.results_df[f'{scenario_label}_observations']
+            predictions = self.results_df[f'{scenario_label}_predictions']
+            if self.variance == 'sem':
+                sem = self.results_df[f'{scenario_label}_sem']
+
+            plt.errorbar(observations, predictions, yerr=sem, fmt='o', label=scenario_label, color=next(palette))
+
+        plt.legend(title="Variable")
+
+        if self.out_dir is not None:
+            plt.savefig(os.path.join(self.out_dir, 'emm_plot.svg'))
+        
+    def generate_marginal_scenario_dataframe(self, current_marginal_scenario):
+        """
+        Modify self.data_df based on the current scenario in current_marginal_scenario.
+        This will 
+        """
+        # Make a copy of the original DataFrame
+        marginal_df = self.data_df.copy()
+        # Iterate over each key-value pair in the current scenario
+        for key, value in current_marginal_scenario.items():
+            # print(k, v)
+            if value == 'continuous':
+                raise ValueError(f"continuous is not a valid value for {key}. This function measures estimated marginal means at specific points. Please enter a list of values to test.")
+            # Take at mean. good for ANOVA.
+            elif value == 'mean':
+                values = self.data_df[key].mean()
+                marginal_df[key] = values
+            # Take at standard deviation. good for GLM.
+            elif value == 'std':
+                print('Entered std for {0}'.format(key) + '. This is not entirely sorted yet, and may cause plotting errors.')
+                mean = self.data_df[key].mean()
+                std = self.data_df[key].std()
+                values = [mean - 2(std),  mean + 2(std)]
+                marginal_df[key] = values
+            else: 
+                marginal_df[key] = value
+        return marginal_df, values
+    
+    def run(self):
+        self.orchestrate_marginal_predictions()
+        self.emm_plot()
