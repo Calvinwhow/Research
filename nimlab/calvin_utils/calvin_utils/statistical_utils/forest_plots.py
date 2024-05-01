@@ -143,6 +143,9 @@ class OddsRatioForestPlot(ForestPlot):
         Name of the column in the DataFrame containing the predictor variable.
     category_col : str
         Name of the column in the DataFrame containing the category variable.
+    treatment : str, optional
+        This is a string which defines the STRING in the treatment class. It will make sure rows matching the string are set to 1. 
+        This is critical for enforcing the sign of the odds ratio. If left as None, will arbitrarily assign 1/0 to rows. 
     covariates : list, optional
         List of column names in the DataFrame to be included as covariates in the logistic regression (default: None).
     sig_digits : int, optional
@@ -155,10 +158,11 @@ class OddsRatioForestPlot(ForestPlot):
         Flag to indicate whether to display log odds or not. 
     """
 
-    def __init__(self, data, outcome_col, predictor_col, category_col, covariates=None, sig_digits=2, out_dir=None, table=False, log_odds=False):
+    def __init__(self, data, outcome_col, predictor_col, category_col, treatment = None, covariates=None, sig_digits=2, out_dir=None, table=False, log_odds=False):
         self.data = data
         self.outcome_col = outcome_col
         self.predictor_col = predictor_col
+        self.predictor_treatment = treatment
         self.category_col = category_col
         self.covariates = covariates if covariates else []
         self.sig_digits = sig_digits
@@ -179,6 +183,10 @@ class OddsRatioForestPlot(ForestPlot):
         
         # Iterate over each column and apply label encoding
         for col in columns_to_encode:
+            if col == self.predictor_col:
+                if self.predictor_treatment is not None: 
+                    self.data[col] = np.where(self.data[col]==self.predictor_treatment, 1, 0)
+                    continue 
             self.data[col] = pd.factorize(self.data[col])[0]
 
     def construct_formula(self):
@@ -190,7 +198,7 @@ class OddsRatioForestPlot(ForestPlot):
             self.formula += " + " + " + ".join(self.covariates)
         print("Running formula: ", self.formula)
     
-    def run_logistic_regression(self, category=None):
+    def run_logistic_regression(self, category=None, debug=False):
         """
         Run logistic regression for a specific category of the predictor variable.
         """
@@ -198,7 +206,16 @@ class OddsRatioForestPlot(ForestPlot):
             data_subset = self.data[self.data[self.category_col] == category]
         else:
             data_subset = self.data
-        logit_model = smf.logit(self.formula, data=data_subset).fit()
+        if debug:
+            print("~~Col: ", category)
+            print(data_subset[self.predictor_col])
+            print(data_subset[self.outcome_col])
+        try:
+            logit_model = smf.logit(self.formula, data=data_subset).fit()
+        except sm.tools.sm_exceptions.PerfectSeparationError as e:
+            backup_formula = self.formula + " - 1"
+            logit_model = smf.logit(backup_formula, data=data_subset).fit()
+            print(F"Perfect separation error detected. \n RESULTS FOR {category} UNRELIABLE")
         return logit_model
     
     def get_coef_and_ci(self, logit_model):

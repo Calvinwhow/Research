@@ -598,7 +598,7 @@ class FactorialPlot(EMMPlot):
 import matplotlib.pyplot as plt
 import pandas as pd
 
-class FlexibleInteractionPlot(FactorialPlot):
+class EstimatedMarginalMean(FactorialPlot):
 
     def create_interaction_plot_dynamic(self, emm_df, categorical_vars, ms=10, out_dir=None):
         """
@@ -1087,11 +1087,15 @@ class PartialDependencePlot(EMMPlot):
         self.orchestrate_marginal_predictions()
         self.partial_dependence_plots()
 
-class ProfilePlot(EMMPlot):
+class GLMMarginalsPlot():
     """
-    The ProfilePlot class generates profile plots to visualize the effect of varying one or more predictor variables 
+    The GLMMarginalsPlot class generates profile plots to visualize the effect of varying one or more predictor variables 
     on the response variable, holding other variables constant. This class is particularly useful for exploring and 
     presenting the relationship between predictors and the predicted outcome in a statistical model.
+    
+    This best takes in a GLM, or data which has at least one continuous predictor variable. 
+    
+    AKA a profile plot.
 
     Attributes:
         formula (str): The regression formula used in the model.
@@ -1101,10 +1105,17 @@ class ProfilePlot(EMMPlot):
             used for generating marginal scenarios. For continuous variables, the value should be 'continuous', 
             and for categorical variables, it should be a list of values to iterate over.
             Example: {'age': 'continuous', 'gender': ['male', 'female'], 'dose': 'std'}
+            For 'continuous'
+                - will predict across the entire range of values, spanning data_range
+            For 'mean'
+                - will find the mean value of the predictor within this combination of other levels and derive estimates at it
+            For 'std'
+                - will find the mean value of the predictor within this combination of other levels and derive estimates of +/-2stdevs
         data_range (tuple, optional): Specifies the range (min, max) to vary continuous variables. If not provided, 
             the range is derived from the data.
+            - This is only used whel 'continuous' is specified.
         out_dir (str, optional): Directory path to save the generated plots.
-        marginal_method (str): Determines how non-focal variables are held constant (mean, min, max, etc.).
+        variance_bars (str) sem | 95ci: how to plot the error bars. Set to None for no error bars.
         debug (bool): If True, enables debug mode for additional logging.
 
     Methods:
@@ -1128,30 +1139,63 @@ class ProfilePlot(EMMPlot):
     TODO:
         -   Store the confidence intervals from the predictions. Plot them. 
     """
-    def __init__(self, formula, data_df, model, marginal_scenarios_dict, data_range=None, out_dir=None, marginal_method='mean', debug=False):
+    def __init__(self, formula, data_df, model, marginal_scenarios_dict, data_range=None, out_dir=None, variance_bars='sem', debug=False):
         """
         init method
         """
-        super().__init__(formula, data_df, model)
+        # super().__init__(formula, data_df, model)
+        self.formula = formula
+        self.data_df=data_df
+        self.model=model
         self.results_dict = dict()
         self.data_range = data_range
         self.out_dir = out_dir
-        self.marginal_method = marginal_method
         self.marginal_scenarios_dict = marginal_scenarios_dict
         self.debug = debug
+        self.variance_bars = variance_bars
         self.results_df = pd.DataFrame()
         
     def set_palette(self):
         num_scenarios = len(self.marginal_scenarios)
         if num_scenarios <= 10:
-            palette = "tab10"
+            palette = sns.color_palette('tab10', len(self.marginal_scenarios)) 
+            sns.set_palette('tab10')
         elif num_scenarios <= 20:
-            palette = "tab20"
+            palette = sns.color_palette('tab10', len(self.marginal_scenarios)) 
+            sns.set_palette('tab20')
         else:
             cmap = plt.cm.get_cmap('hsv', num_scenarios)
             palette = [cmap(i) for i in range(num_scenarios)]
-            sns.set_palette(palette, desat=1)
+            sns.set_palette(palette)
         return palette
+
+    def get_continuous_bars(self, scenario_label):
+        """
+        Method to extract error estiamtes or pass on them. 
+        """
+        # Prepares error bars
+        if self.variance_bars=='sem':
+            lower = self.results_df[f'{scenario_label}_predictions'] - self.results_df[f'{scenario_label}_sem']
+            higher = self.results_df[f'{scenario_label}_predictions'] + self.results_df[f'{scenario_label}_sem']
+        # Confidence interval as error bars
+        elif self.variance_bars=='95ci':
+            lower =  self.results_df[f'{scenario_label}_ci_low']
+            higher = self.results_df[f'{scenario_label}_ci_high']
+        # No error bars
+        else:
+            lower = None; higher = None
+        return lower, higher
+    
+    def get_std_bars(self, scenario_label):
+        if self.variance_bars=='sem':
+            bars = self.results_df[f'{scenario_label}_sem']
+        elif self.variance_bars=='95ci':
+            higher = self.results_df[f'{scenario_label}_predictions'] + self.results_df[f'{scenario_label}_sem']
+            mean_predictions = self.results_df[f'{scenario_label}_predictions']
+            bars = higher - mean_predictions
+        else:
+            bars = None
+        return bars
     
     def profile_plot(self):
         """
@@ -1160,17 +1204,32 @@ class ProfilePlot(EMMPlot):
         """
         palette = self.set_palette()
         plt.figure(figsize=(10, 6))  # Adjust the figure size as needed
-        plt.title(f"Profile Plot")
-        for marginal_scenario in self.marginal_scenarios:
+        plt.title(f"Marginals Plot")
+        
+        for i, marginal_scenario in enumerate(self.marginal_scenarios):
             scenario_label = "_".join([f"{k}={v}" for k, v in marginal_scenario.items()])
-            sns.lineplot(x=self.results_df[f'{scenario_label}_observations'], y=self.results_df[f'{scenario_label}_predictions'], label=scenario_label, palette=palette)
-            
+            if 'continuous' in marginal_scenario.values():
+                sns.lineplot(x=self.results_df[f'{scenario_label}_observations'], y=self.results_df[f'{scenario_label}_predictions'], label=scenario_label)
+                lower, higher = self.get_continuous_bars(scenario_label)
+                if lower is not None:
+                    plt.fill_between(self.results_df[f'{scenario_label}_observations'], lower, higher, color=palette[i], alpha=0.2)
+            elif 'std' in marginal_scenario.values() or 'mean' in marginal_scenario.values():
+                x_values = self.results_df[f'{scenario_label}_observations']
+                y_values = self.results_df[f'{scenario_label}_predictions']
+                error_bars = self.get_std_bars(scenario_label)
+                if self.variance_bars is not None:
+                    plt.errorbar(x=x_values, y=y_values, yerr=error_bars, fmt='-o', label=scenario_label, color=palette[i], capsize=5)
+                else:
+                    plt.scatter(x=x_values, y=y_values, fmt='o', label=scenario_label, color=palette[i])
+            else:
+                raise ValueError("Unexpected value entered. At least one key must be std | mean | continuous")
+        
         plt.xlabel("Observed Value")
         plt.ylabel("Predicted Value")
         plt.legend(title="Variable")
         if self.out_dir is not None:
-            plt.savefig(os.path.join(self.out_dir, f'profile_plot.svg'))
-            plt.savefig(os.path.join(self.out_dir, f'profile_plot.png'))
+            plt.savefig(os.path.join(self.out_dir, f'glm_marginal_plot.svg'))
+            plt.savefig(os.path.join(self.out_dir, f'glm_marginal_plot.png'))
         plt.show()
 
     def marginal_prediction(self, marginal_design_matrix, marginal_scenario, continuous_values):
@@ -1181,9 +1240,8 @@ class ProfilePlot(EMMPlot):
         try:
             predictions = self.model.get_prediction(marginal_design_matrix)
             scenario_label = "_".join([f"{k}={v}" for k, v in marginal_scenario.items()])
-            
             self.results_df[f'{scenario_label}_predictions'] = predictions.predicted_mean
-            self.results_df[f'{scenario_label}_observations'] = continuous_values[0:len(predictions)]
+            self.results_df[f'{scenario_label}_observations'] = continuous_values[range(len(predictions.predicted_mean))]
             
             self.results_df[f'{scenario_label}_sem'] =  predictions.se_mean
             
@@ -1191,15 +1249,12 @@ class ProfilePlot(EMMPlot):
             self.results_df[f'{scenario_label}_ci_low'] = ci[:, 0]
             self.results_df[f'{scenario_label}_ci_high'] = ci[:, 1]
         except Exception as e:
-            print("Error occurred while using get_prediction method: " + str(e) + '\n Defalting to .predict() method. Losing estimate of error.')
-            # This will return a pandas dataframe of predictions
+            print("*** \n Error occurred while using get_prediction method: " + str(e) + '\n Defalting to .predict() method. Losing estimate of error.')
             predictions = self.model.predict(marginal_design_matrix)
-            # This gets the prediction associated with our class of interest
             scenario_label = "_".join([f"{k}={v}" for k, v in marginal_scenario.items()])
             self.results_df[f'{scenario_label}_predictions'] = predictions
             self.results_df[f'{scenario_label}_observations'] = continuous_values[0:len(predictions)]
 
-        
     def define_design_matrix(self, marginal_df):
         """
         Defines the design matrix based on the patsy formula and returns it as a DataFrame.
@@ -1213,6 +1268,21 @@ class ProfilePlot(EMMPlot):
         y, X = patsy.dmatrices(self.formula, marginal_df, return_type='dataframe')
         return y, X   
     
+    def extract_mean_value(self, scenario, target_variable):
+        # Filter data based on the scenario criteria, excluding the target variable 'mean' situation
+        filtered_df = self.data_df.copy()
+        for key, value in scenario.items():
+            if key != target_variable and key in filtered_df.columns:
+                if isinstance(value, list):
+                    filtered_df = filtered_df[filtered_df[key].isin(value)]
+                else:
+                    filtered_df = filtered_df[filtered_df[key] == value]
+        
+        # Calculate the mean for the target variable in the filtered DataFrame
+        mean = filtered_df[target_variable].mean()
+        std = filtered_df[target_variable].std()
+        return mean, std
+    
     def generate_marginal_scenario_dataframe(self, current_marginal_scenario):
         """
         Modify self.data_df based on the current scenario in current_marginal_scenario. For continuous keys,
@@ -1220,16 +1290,28 @@ class ProfilePlot(EMMPlot):
         """
         # Make a copy of the original DataFrame
         marginal_df = self.data_df.copy()
-        marginal_df = marginal_df.iloc[0:100,:]
         # Iterate over each key-value pair in the current scenario
         for key, value in current_marginal_scenario.items():
-            # print(k, v)
+            # Make marginal predictions over a range of data
             if value == 'continuous':
+                marginal_df = marginal_df.iloc[0:100,:]
                 if self.data_range is not None:
                     continuous_values = np.linspace(self.data_range[0], self.data_range[1], len(marginal_df))
                 else:
                     continuous_values = np.linspace(self.data_df[key].min(), self.data_df[key].max(), len(marginal_df))
                 marginal_df[key] = continuous_values
+            # Make marginal predictions at standard deviations
+            elif value == 'std':
+                marginal_df = marginal_df.iloc[0:2,:]
+                mean, std = self.extract_mean_value(current_marginal_scenario, key)  
+                continuous_values = np.array([mean - 2*std, mean + 2*std])
+                marginal_df[key] = continuous_values
+            # Generate Estimated Marginal Means
+            elif value == 'mean':
+                marginal_df = marginal_df.iloc[0:1,:]
+                mean, _ = self.extract_mean_value(current_marginal_scenario, key)  
+                continuous_values = np.array([mean]) 
+                marginal_df[key] = continuous_values        
             else: 
                 marginal_df[key] = value
         return marginal_df, continuous_values
@@ -1278,92 +1360,188 @@ class ProfilePlot(EMMPlot):
     def run(self):
         self.orchestrate_marginal_predictions()
         self.profile_plot()
-        
-class EMMPlotV2(ProfilePlot):
+
+def predict_outcomes(model, design_matrix):
     """
-    This is a class which will generate estimated marginal means.
-    Will use the average 'average case approach' is to average the actual data together, then make a prediction on it. 
-    Averages data together, then predicts the data. Stores the uncertainty about the prediction and plots it. 
-    Significance can use post-hoc testing to compare the predictions, or confidence intervals can infer prediction. 
-    
-    Attributes:
-        formula (str): The regression formula used in the model.
-        data_df (pd.DataFrame): The DataFrame containing the regressors and observations.
-        model (StatsModels.Model instance): The fitted statistical model.
-        marginal_scenarios_dict (dict): A dictionary specifying the categories (predictors) and their values to be 
-            used for generating marginal scenarios. For continuous variables, the value should be 'continuous', 
-            and for categorical variables, it should be a list of values to iterate over.
-            Example: {'age': 'mean', 'gender': ['male', 'female']}
-            - Mean will result in grabbig the mean value. 
-            - Std will result in grabbing the value at two standard deviations above and below. 
-            - Only set one value to mean or std. This is how we plot the x-axis. 
-        data_range (tuple, optional): Specifies the range (min, max) to vary continuous variables. If not provided, 
-            the range is derived from the data.
-        out_dir (str, optional): Directory path to save the generated plots.
-        marginal_method (str): Determines how non-focal variables are held constant (mean, min, max, etc.).
-        debug (bool): If True, enables debug mode for additional logging.
-        variance (str) 'sem' | 'ci': will either plot the confidence interval (95%) or the SEM on the mean.  
-        
-    Note:
-        - One of the keys (columns) must have a value called mean. This is critical. s.td also work
+    Predicts the outcomes for each row in the data DataFrame based on the given model and formula.
+
+    Parameters:
+    - model: The fitted OLS model.
+    - data_df: DataFrame containing the data for prediction.
+
+    Returns:
+    - predictions: A DataFrame with predicted values for each row in the data_df.
     """
-    def __init__(self, *args, variance='sem', **kwargs):
-        super().__init__(*args, **kwargs)
-        self.variance=variance
-        
-    def emm_plot(self):
-        """
-        This method will create an estimated marginal mean plot.
-        Each marginal scenario will be represented by a dot for the predicted value,
-        with error bars representing the standard error of the mean (SEM).
-        """
-        palette = self.set_palette()
-        plt.figure(figsize=(10, 6))  # Adjust the figure size as needed
-        plt.title("Estimated Marginal Mean Plot")
-        plt.xlabel("Observed Value")
-        plt.ylabel("Predicted Value")
-
-        for marginal_scenario in self.marginal_scenarios:
-            scenario_label = "_".join([f"{k}={v}" for k, v in marginal_scenario.items()])
-            observations = self.results_df[f'{scenario_label}_observations']
-            predictions = self.results_df[f'{scenario_label}_predictions']
-            if self.variance == 'sem':
-                sem = self.results_df[f'{scenario_label}_sem']
-
-            plt.errorbar(observations, predictions, yerr=sem, fmt='o', label=scenario_label, color=next(palette))
-
-        plt.legend(title="Variable")
-
-        if self.out_dir is not None:
-            plt.savefig(os.path.join(self.out_dir, 'emm_plot.svg'))
-        
-    def generate_marginal_scenario_dataframe(self, current_marginal_scenario):
-        """
-        Modify self.data_df based on the current scenario in current_marginal_scenario.
-        This will 
-        """
-        # Make a copy of the original DataFrame
-        marginal_df = self.data_df.copy()
-        # Iterate over each key-value pair in the current scenario
-        for key, value in current_marginal_scenario.items():
-            # print(k, v)
-            if value == 'continuous':
-                raise ValueError(f"continuous is not a valid value for {key}. This function measures estimated marginal means at specific points. Please enter a list of values to test.")
-            # Take at mean. good for ANOVA.
-            elif value == 'mean':
-                values = self.data_df[key].mean()
-                marginal_df[key] = values
-            # Take at standard deviation. good for GLM.
-            elif value == 'std':
-                print('Entered std for {0}'.format(key) + '. This is not entirely sorted yet, and may cause plotting errors.')
-                mean = self.data_df[key].mean()
-                std = self.data_df[key].std()
-                values = [mean - 2(std),  mean + 2(std)]
-                marginal_df[key] = values
-            else: 
-                marginal_df[key] = value
-        return marginal_df, values
+    # Add a column for predictions to the data_df
     
-    def run(self):
-        self.orchestrate_marginal_predictions()
-        self.emm_plot()
+    return model.predict(design_matrix)
+
+def calculate_average_predictions(data_df, predictions, group1_column, group2_column):
+    """
+    Calculates average predictions for each combination of unique values in Group 1 and Group 2.
+
+    Parameters:
+    - data_df: DataFrame containing the 'Group 1' and 'Group 2' columns.
+    - predictions: Series containing the predicted values.
+    - group1_column: Name of the Group 1 column in data_df.
+    - group2_column: Name of the Group 2 column in data_df.
+
+    Returns:
+    - average_predictions_df: DataFrame with 'Group 1', 'Group 2', and 'Average Prediction' columns.
+    """
+    # Create an empty DataFrame to store the results
+    average_predictions_df = pd.DataFrame(columns=['Group 1', 'Group 2', 'Average Prediction'])
+
+    # Get unique values in Group 1 and Group 2
+    unique_group1_values = data_df[group1_column].unique()
+    unique_group2_values = data_df[group2_column].unique()
+
+    # Loop through unique values of Group 1 and Group 2
+    for group1_value in unique_group1_values:
+        for group2_value in unique_group2_values:
+            # Filter predictions based on the indices where Group 1 and Group 2 match
+            filtered_predictions = predictions[(data_df[group1_column] == group1_value) & (data_df[group2_column] == group2_value)]
+
+            # Calculate the average prediction for this combination
+            average_prediction = filtered_predictions.mean()
+
+            # Add the result to the DataFrame
+            average_predictions_df = average_predictions_df.append({'Group 1': group1_value, 'Group 2': group2_value, 'Average Prediction': average_prediction}, ignore_index=True)
+
+    return average_predictions_df
+
+def plot_grouped_barplot(data_df, out_dir):
+    """
+    Plots a grouped barplot with 'Group 2' on the x-axis and 'Group 1' bars side-by-side.
+
+    Parameters:
+    - data_df: DataFrame containing the data for plotting.
+    """
+    # Set the style for the plot
+    sns.set(style="whitegrid")
+
+    # Create the barplot
+    plt.figure(figsize=(20, 6))
+    sns.barplot(x='Group 2', y='Average Prediction', hue='Group 1', data=data_df)
+
+    # Add labels and title
+    plt.xlabel('Group 2')
+    plt.ylabel('Average Prediction')
+    plt.title('Grouped Barplot of Average Predictions')
+
+    # Show the legend
+    plt.legend(title='Group 1', loc='upper right')
+    
+    # Save the figure
+    plt.savefig(f"{out_dir}/estimated_marginal_mean.png", bbox_inches='tight')
+    plt.savefig(f"{out_dir}/estimated_marginal_mean.svg", bbox_inches='tight')
+    print(f'Saved to {out_dir}/estimated_marginal_mean.svg')
+
+    # Show the plot
+    plt.show()
+    
+def calculate_average_actual(data_df, group1_column, group2_column, outcome_column):
+    """
+    Calculates average actual outcomes for each combination of unique values in Group 1 and Group 2.
+
+    Parameters:
+    - data_df: DataFrame containing the data.
+    - group1_column: Name of the Group 1 column in data_df.
+    - group2_column: Name of the Group 2 column in data_df.
+    - outcome_column: Name of the column containing the actual outcomes.
+
+    Returns:
+    - average_actual_df: DataFrame with 'Group 1', 'Group 2', and 'Average Actual' columns.
+    """
+    # Create an empty DataFrame to store the results
+    average_actual_df = pd.DataFrame(columns=['Group 1', 'Group 2', 'Average Actual'])
+
+    # Get unique values in Group 1 and Group 2
+    unique_group1_values = data_df[group1_column].unique()
+    unique_group2_values = data_df[group2_column].unique()
+
+    # Loop through unique values of Group 1 and Group 2
+    for group1_value in unique_group1_values:
+        for group2_value in unique_group2_values:
+            # Filter data based on the indices where Group 1 and Group 2 match
+            filtered_data = data_df[(data_df[group1_column] == group1_value) & (data_df[group2_column] == group2_value)]
+
+            # Calculate the average actual outcome for this combination
+            average_actual = filtered_data[outcome_column].mean()
+
+            # Add the result to the DataFrame
+            average_actual_df = average_actual_df.append({'Group 1': group1_value, 'Group 2': group2_value, 'Average Actual': average_actual}, ignore_index=True)
+
+    return average_actual_df
+
+
+def plot_grouped_barplot_actual(data_df, out_dir):
+    """
+    Plots a grouped barplot with 'Group 2' on the x-axis and 'Group 1' bars side-by-side for average actual outcomes.
+
+    Parameters:
+    - data_df: DataFrame containing the data for plotting.
+    """
+    # Set the style for the plot
+    sns.set(style="whitegrid")
+
+    # Create the barplot
+    plt.figure(figsize=(20, 6))
+    sns.barplot(x='Group 2', y='Average Actual', hue='Group 1', data=data_df)
+
+    # Add labels and title
+    plt.xlabel('Group 2')
+    plt.ylabel('Average Actual Outcome')
+    plt.title('Grouped Barplot of Average Actual Outcomes')
+
+    # Show the legend
+    plt.legend(title='Group 1', loc='upper right')
+
+    # Show the plot
+    plt.show()
+    
+    # Save the figure
+    out_dir = out_dir # Replace with your output directory
+    plt.savefig(f"{out_dir}/actual_marginal_mean.png", bbox_inches='tight')
+    plt.savefig(f"{out_dir}/actual_marginal_mean.svg", bbox_inches='tight')
+    print(f'Saved to {out_dir}/actual_marginal_mean.svg')
+    
+def run_ancova_emm(model, df, design_matrix, group_1, group_2, outcome_column, out_dir=None):
+    """
+    Executes the ANCOVA EMM analysis pipeline, generating predictions based on a given model and plotting 
+    both the average predicted and actual outcomes for specified groupings within the data.
+
+    This function serves as a wrapper to streamline the process of predicting outcomes using the model,
+    calculating average predictions and actual outcomes for specified group categories, and then plotting
+    these averages for visual comparison.
+    
+    This is a type 1 EMM, which is techncially more accurate. It makes predictions on each observation, then averages them together. 
+
+    Parameters:
+    - model: A fitted statistical model object that has a predict method. This model is used to generate 
+             outcome predictions based on the design matrix provided.
+    - design_matrix: DataFrame, the design matrix containing data for prediction. This includes both 
+                     the group categorization columns and any other predictors required by the model.
+    - group_1: String, the name of the first grouping variable in the design matrix. This categorizes data 
+               into different groups for which EMMs are to be calculated.
+    - group_2: String, the name of the second grouping variable in the design matrix, used in conjunction 
+               with group_1 to further categorize data.
+    - outcome_column: String, the name of the column in the design matrix that contains the actual outcome 
+                      values. These are used for calculating and plotting actual means.
+    - out_dir: String, optional, the directory path where the plots will be saved. If None, plots will 
+               not be saved to files.
+
+    Outputs:
+    The function generates two plots: one for the average predictions and another for the average actual 
+    outcomes, grouped by the specified categorization variables. Optionally, these plots are saved to the 
+    specified output directory.
+
+    Returns:
+    None
+    """
+    predictions = predict_outcomes(model=model, data_df=design_matrix)
+    average_predictions_df = calculate_average_predictions(df, predictions, group_1, group_2)
+    print("Estimated Marginal means below")
+    plot_grouped_barplot(average_predictions_df, out_dir=out_dir)
+    print('Actual means below')
+    plot_grouped_barplot_actual(calculate_average_actual(df, group_1, group_2, outcome_column),out_dir=out_dir)
