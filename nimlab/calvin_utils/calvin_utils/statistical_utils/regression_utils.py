@@ -5,7 +5,7 @@ class RegressOutCovariates():
     Will regress on values and return residuals. Will add the residuals to a dataframe as <name>_residual and return the DF
     """
     @staticmethod
-    def generate_formula(independent_variable_list, covariates_list, verbose=False):
+    def generate_formula(independent_variable_list, covariates_list, intercept, verbose=True):
         formula_dict = {}
         for dep_var in independent_variable_list:
             formula = dep_var
@@ -14,6 +14,10 @@ class RegressOutCovariates():
                     formula += f" ~ {covariate}"
                 else:
                     formula += f" + {covariate}"
+            if intercept:
+                continue
+            else:
+                 formula += f" - 1"
             formula_dict[dep_var] = formula
             print(f"Formula for {dep_var}: \n", formula) if verbose else None
         return formula_dict
@@ -29,7 +33,7 @@ class RegressOutCovariates():
         return df, adjusted_indep_vars_list
     
     @staticmethod
-    def run(df, independent_variable_list, covariates_list):
+    def run(df, independent_variable_list, covariates_list, intercept=True):
         """
         Params:
         
@@ -37,8 +41,6 @@ class RegressOutCovariates():
         independent_variable_list: a list of indendent variables as found in the dataframe columns. 
         covariates_list: a list of covariates as found in the dataframe columns. 
         """
-        formula_dict = RegressOutCovariates.generate_formula(independent_variable_list, covariates_list)
+        formula_dict = RegressOutCovariates.generate_formula(independent_variable_list, covariates_list, intercept)
         df, adjusted_indep_vars_list = RegressOutCovariates.regress_out_covariates(df, formula_dict)
-        
-
         return df, adjusted_indep_vars_list
