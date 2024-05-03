@@ -1,8 +1,10 @@
 #!/bin/bash
 # This script processes brain imaging data within a a BIDS directory that was mounted to a Dockerfile.
-
+# CRITICAL NOTE: DATA IS EXPECTED TO BE FOUND AT: $ROOTDIR/$sub/surf/$hemi.${sub}_thickness.${FWHM}.fs5.gii
+#       IF YOU NEED TO CHANGE FOR SOME REASON, EDIT LINE 35 TO MATCH YOU FILE NAMING ARCHITECTURE
 ROOTDIR="/data" 
-FWHM="s6"
+FWHM="6"
+
 # Tell freesurfer where the subjects are
 export SUBJECTS_DIR=/data
 
@@ -14,6 +16,7 @@ fi
 for dir in $ROOTDIR/*; do
     if [ -d "$dir" ]; then
         sub=$(basename "$dir")  # Assign subject identifier from the first field of the line
+        
         # Skip the fsaverage5 directory
         if [ "$sub" == "fsaverage" ]; then
             continue
@@ -29,8 +32,10 @@ for dir in $ROOTDIR/*; do
         for hemi in lh rh; do
             # Method A: convert fsaverage5 (now 7) gii to nii, then nii to mni152 nii
             # Step 1: Convert the fsaverage space image into a volume image (still in fsaverage space)
+            subnum=${sub:4}
+            echo "Looking for files following the structure:" $hemi.$sub.$FWHM.gii
             mri_surf2vol \
-            --surfval "$ROOTDIR/$sub/surf/$hemi.${sub}_thickness.${FWHM}.fs5.gii" \
+            --surfval "$ROOTDIR/$sub/$hemi.$subnum.$FWHM.gii" \
             --identity "fsaverage5" \
             --template "$ROOTDIR/fsaverage5/mri/T1.mgz" \
             --hemi $hemi \
