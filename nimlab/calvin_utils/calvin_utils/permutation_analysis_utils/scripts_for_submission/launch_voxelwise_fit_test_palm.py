@@ -48,7 +48,7 @@ if __name__=='__main__':
 
     #----------------------------------------------------------------Begin User Input
     script_info = ScriptInfo(script_dict)
-    parser = script_info.create_argparse_parser('launch_voxelwise_coefficient_t_test_palm.py')
+    parser = script_info.create_argparse_parser('launch_voxelwise_fit_test_palm.py')
     args = parser.parse_args()
     
     # Parse the list arguments as actual lists (not strings)
