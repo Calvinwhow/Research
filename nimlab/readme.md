@@ -6,7 +6,6 @@ If not, the setup.py file is in the root level of the directory.
 
 Depending on what files of mine you run, you may run into dependency errors.
 This is not optimized for distribution.
-You got it!
 
 ________________________________________________________________
 License
