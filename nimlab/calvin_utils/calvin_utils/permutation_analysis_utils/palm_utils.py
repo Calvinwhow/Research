@@ -145,38 +145,143 @@ class CalvinPalm:
 
         self.dep_var_series = self.df[dep_var_column]
         return self.dep_var_series
-
-    def generate_4d_dependent_variable_nifti(self, mask=None, absval=False):
+    
+    def generate_voxelwise_cov_4d_nifti(self, X, voxelwise_variable, absval=False):
         """
-        Generate a 4D Nifti file for the dependent variable based on individual Nifti files.
+        Generate a 4D Nifti file for each component of the formula.
 
         Parameters:
-        - mask_img: Nifti-like object, the mask image.
+        - X (df): the design matrix
+        - voxelwise_variable (str): the voxelwise variable in the design matrix
         - absval: Boolean, whether to take the absolute value of the 4D image.
 
         Returns:
         - String, the path to the generated 4D Nifti file.
         """
-        if mask is None:
-            self.mask = mask if mask else "mni_icbm152"
-            mask_img = self.mask.get_img(self.mask)  # Assuming get_img is a method to get the mask
-            
-        if not hasattr(self, 'dep_var_series'):
-            raise AttributeError("Dependent variable not set. Use set_dependent_variable() first.")
-
-        save_dir = os.path.join(self.output_dir, '4d_dependent_variable_nifti')
+        # Prepare directory
+        save_dir = os.path.join(self.output_dir, '4d_niftis')
         os.makedirs(save_dir, exist_ok=True)
-
-        nifti_imgs = [image.load_img(file_path) for file_path in self.dep_var_series]
-        data_4d = image.concat_imgs(nifti_imgs)
         
+        # Prepare the voxelwise 4D nifti
+        nifti_imgs = [image.load_img(file_path) for file_path in X[voxelwise_variable]]
+        data_4d = image.concat_imgs(nifti_imgs)
+            
         if absval:
             data_4d = image.math_img("np.abs(img)", img=data_4d)
 
-        output_path = os.path.join(save_dir, 'dependent_variable_4D.nii')
+        output_path = os.path.join(save_dir, f'{voxelwise_variable}.nii')
         data_4d.to_filename(output_path)
 
         return output_path
+    
+    def generate_univariate_4d_niftis(self, X, voxelwise_variable, absval=False):
+        """
+        Generate a 4D Nifti file for each covariate excluding the voxelwise variable,
+        with each 3D volume in the 4D Nifti filled with a scalar covariate value.
+
+        Parameters:
+        - X (DataFrame): The design matrix with covariates in columns and patients in rows.
+        - voxelwise_variable (str): The column name of the voxelwise images in the DataFrame.
+        - absval (bool): Whether to take the absolute value of the generated 4D Nifti image.
+
+        Returns:
+        - List of paths to the generated 4D Nifti files.
+        """
+        # Prepare directory
+        save_dir = os.path.join(self.output_dir, '4d_niftis')
+        os.makedirs(save_dir, exist_ok=True)
+        
+        # Load a reference 3D Nifti image to get the shape
+        reference_img_path = X.loc[0, voxelwise_variable]  # Assuming the first row can be used as reference
+        reference_img = image.load_img(reference_img_path)
+
+        # Prepare a list to store paths of the generated Nifti files
+        nifti_paths = []
+
+        # Loop over each covariate in the design matrix
+        for covariate in X.columns:
+            if covariate == voxelwise_variable:
+                continue  # Skip the voxelwise variable
+
+            # Initialize an empty 4D array with the same spatial dimensions as the reference image,
+            # but with depth equal to the number of patients
+            num_patients = X.shape[0]
+            covariate_data_4d = np.zeros(reference_img.shape + (num_patients,))
+
+            # Fill each slice of the 4D array with the covariate value for each patient
+            for idx, value in enumerate(X[covariate].values):
+                covariate_data_4d[..., idx] = value  # Fill the entire volume slice with the covariate value
+
+            # Create a 4D Nifti image from the filled data
+            covariate_nifti = image.new_img_like(reference_img, covariate_data_4d)
+
+            # Optionally take the absolute value of the 4D image
+            if absval:
+                covariate_nifti = image.math_img("np.abs(img)", img=covariate_nifti)
+
+            # Generate the output path and save the 4D Nifti file
+            output_path = os.path.join(save_dir, f'{covariate}.nii')
+            covariate_nifti.to_filename(output_path)
+
+            # Add the path to the list of generated Nifti files
+            nifti_paths.append(output_path)
+
+        return nifti_paths
+
+    def generate_4d_dependent_variable_nifti(self, Y, X, voxelwise_variable, absval=False):
+        """
+        Generate a 4D Nifti file for each covariate excluding the voxelwise variable,
+        with each 3D volume in the 4D Nifti filled with a scalar covariate value.
+
+        Parameters:
+        - Y (DataFrame): The outcome matrix with patients in rows. 
+        - X (DataFrame): The design matrix with covariates in columns and patients in rows.
+        - voxelwise_variable (str): The column name of the voxelwise images in the DataFrame.
+        - absval (bool): Whether to take the absolute value of the generated 4D Nifti image.
+
+        Returns:
+        - List of paths to the generated 4D Nifti files.
+        """
+        # Prepare directory
+        save_dir = os.path.join(self.output_dir, '4d_niftis')
+        os.makedirs(save_dir, exist_ok=True)
+        
+        # Load a reference 3D Nifti image to get the shape
+        reference_img_path = X.loc[0, voxelwise_variable]  # Assuming the first row can be used as reference
+        reference_img = image.load_img(reference_img_path)
+
+        # Prepare a list to store paths of the generated Nifti files
+        nifti_paths = []
+
+        # Loop over each covariate in the design matrix
+        for covariate in Y.columns:
+            if covariate == voxelwise_variable:
+                continue  # Skip the voxelwise variable
+
+            # Initialize an empty 4D array with the same spatial dimensions as the reference image,
+            # but with depth equal to the number of patients
+            num_patients = X.shape[0]
+            covariate_data_4d = np.zeros(reference_img.shape + (num_patients,))
+
+            # Fill each slice of the 4D array with the covariate value for each patient
+            for idx, value in enumerate(Y[covariate].values):
+                covariate_data_4d[..., idx] = value  # Fill the entire volume slice with the covariate value
+
+            # Create a 4D Nifti image from the filled data
+            covariate_nifti = image.new_img_like(reference_img, covariate_data_4d)
+
+            # Optionally take the absolute value of the 4D image
+            if absval:
+                covariate_nifti = image.math_img("np.abs(img)", img=covariate_nifti)
+
+            # Generate the output path and save the 4D Nifti file
+            output_path = os.path.join(save_dir, f'{covariate}.nii')
+            covariate_nifti.to_filename(output_path)
+
+            # Add the path to the list of generated Nifti files
+            nifti_paths.append(output_path)
+
+        return nifti_paths
 
     def generate_basic_contrast_matrix(self, design_matrix, compare_to_intercept=False):
         """

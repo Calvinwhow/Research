@@ -23,20 +23,27 @@ class CalvinStatsmodelsPalm(CalvinPalm):
         display(data_df)
         return data_df
     
-    def define_design_matrix(self, formula, data_df):
+    def define_design_matrix(self, formula, data_df, voxelwise_variable=None):
         """
         Defines the design matrix based on the patsy formula and returns it as a DataFrame.
         
         Parameters:
         - formula: str, the patsy formula to construct the design matrix
         - data_df: DataFrame, the data frame from which to construct the design matrix
+        - voxelwise_variablre: str, the column in data_df with paths to the voxelwise regressor files (niftis)
         
         Returns:
         - Tuple containing the design matrix for the dependent variable and the design matrix for the independent variables.
         """
-        y, X = patsy.dmatrices(formula, data_df, return_type='dataframe')
+        if voxelwise_variable is not None:
+            vars = patsy.ModelDesc.from_formula(formula)
+            vars.rhs_termlist.remove(patsy.Term([patsy.EvalFactor(voxelwise_variable)]))
+            y, X = patsy.dmatrices(vars, data_df, return_type='dataframe')
+            X[voxelwise_variable] = data_df[voxelwise_variable]
+        else:
+            y, X = patsy.dmatrices(formula, data_df, return_type='dataframe')
         return y, X
-    
+
     def drop_nans_from_columns(self, columns_to_drop_from=None):
         """
         Drops rows with NaNs from specified columns in the DataFrame.
