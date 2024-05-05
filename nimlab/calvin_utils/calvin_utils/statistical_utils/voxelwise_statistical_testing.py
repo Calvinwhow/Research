@@ -450,7 +450,7 @@ def voxelwise_interaction_f_stat(outcome_df, predictor_neuroimaging_dfs, predict
     else:
         return results_df['statistic'], results_df, temp_df
     
-def voxelwise_r_squared(outcome_df, predictor_neuroimaging_dfs, predictor_covariate_dfs):
+def voxelwise_r_squared(outcome_df, predictor_neuroimaging_dfs, predictor_covariate_dfs, get_coefficients=False):
     """
     Perform voxelwise regression using numpy arrays and Statsmodels, calculating R-squared for each voxel.
     
@@ -458,6 +458,7 @@ def voxelwise_r_squared(outcome_df, predictor_neuroimaging_dfs, predictor_covari
         outcome_df (pd.DataFrame): DataFrame containing the outcome variable with observations in rows.
         predictor_neuroimaging_dfs (list of pd.DataFrame): List of DataFrames with neuroimaging data, observations in rows, voxels in columns.
         predictor_covariate_dfs (list of pd.DataFrame): List of DataFrames with covariate data, observations in rows.
+        get_coefficients (bool): Boolean regarding whether or not to calculate/return coefficients. 
 
     Returns:
         results_df (pd.DataFrame): DataFrame containing R-squared for each voxel.
@@ -478,6 +479,9 @@ def voxelwise_r_squared(outcome_df, predictor_neuroimaging_dfs, predictor_covari
         
     # Initialize a list to store the results for each voxel
     results = {}
+    if get_coefficients:
+        coefficients = {}
+    
     # Loop through each voxel in the neuroimaging data
     for voxel in tqdm((predictor_neuroimaging_dfs[0].index), desc="Calculating R-squared for each voxel"):
         # Gather data for this voxel from all neuroimaging dataframes (assuming each has the same structure)
@@ -490,6 +494,8 @@ def voxelwise_r_squared(outcome_df, predictor_neuroimaging_dfs, predictor_covari
         
         # Collect R-squared
         results[voxel] = {'R_squared': model.rsquared}
+        if get_coefficients:
+            results[voxel] = {'R_squared': model.rsquared, 'Coefficients': model.params}
 
     # Convert results to DataFrame
     results_df = pd.DataFrame.from_dict(results, orient='index')
