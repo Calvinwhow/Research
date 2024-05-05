@@ -36,6 +36,10 @@ class ScriptInfo:
         """Prints the README description of the script."""
         print(f"README: {script['README']}")
 
+    def get_docstring(self, script):
+        """Prints the docstring of the imported script."""
+        return script['get_docstring']
+
     def print_inputs(self, script):
         """
         Prints the required inputs for the script. Each input is printed with its corresponding description.
@@ -91,7 +95,21 @@ class ScriptInfo:
         for script in self.scripts:
             if script['method'] == method:
                 return script['inputs']
+            
+    def get_script_module_by_method(self, method):
+        """
+        Returns a dictionary of the module name for scripts that match a specified method.
 
+        Args:
+            method (str): The method to match.
+
+        Returns:
+            dict: A dictionary containing the module name for the matched scripts.
+        """
+        for script in self.scripts:
+            if script['method'] == method:
+                return 'from nimlab.calvin_utils.calvin_utils.statistical_utils.voxelwise_statistical_testing import '+script['script_name'].split('.py')[0]
+        
     def get_module_by_method(self, method):
         """
         Returns a dictionary of the module name for scripts that match a specified method.
@@ -105,7 +123,20 @@ class ScriptInfo:
         for script in self.scripts:
             if script['method'] == method:
                 return 'calvin_utils.permutation_analysis_utils.scripts_for_submission.'+script['script_name'].split('.py')[0]
-        
+    
+    def get_script_import(self, method):
+        """
+        Returns the import.
+        """
+        for script in self.scripts:
+            if script['method'] == method:
+                return script['import']
+            
+    def get_docstring(self, method):
+        """Prints the docstring of the imported script."""
+        for script in self.scripts:
+            if script['method'] == method:
+                return script['get_docstring']
     def print_info_by_method(self, method):
         """
         Prints all information about scripts that match a specified method.

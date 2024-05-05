@@ -129,7 +129,6 @@ class CalvinPalm:
 
         return self.design_matrix
 
-
     def set_dependent_variable(self, dep_var_column):
         """
         Set the dependent variable for the model.
@@ -145,7 +144,7 @@ class CalvinPalm:
 
         self.dep_var_series = self.df[dep_var_column]
         return self.dep_var_series
-    
+            
     def generate_voxelwise_cov_4d_nifti(self, X, voxelwise_variable, absval=False):
         """
         Generate a 4D Nifti file for each component of the formula.

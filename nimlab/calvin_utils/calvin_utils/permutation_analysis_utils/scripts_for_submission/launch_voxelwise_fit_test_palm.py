@@ -1,12 +1,12 @@
 """
-1) F-Test
+1) T-Test
 -------------------------
 
-This script performs voxelwise interaction F-statistic permutation tests on provided outcomes, clinical covariates, and voxelwise neuroimaging data. 
-
+This script T-statistic permutation tests on provided outcomes, clinical covariates, and voxelwise neuroimaging data. 
 User input is required to define the number of permutations, the output directory, job name, and paths to the outcome, clinical covariate, and neuroimaging data. 
-
-The script uses multiprocessing for efficient computation of the permutation tests. It generates permuted versions of the patient labels in the input data and calculates the F-statistic for each permutation. The results are saved to the output directory, with each permutation result stored in a separate csv file.
+The script uses multiprocessing for efficient computation of the permutation tests.
+It generates permuted versions of the patient labels in the input data and calculates the F-statistic for each permutation. 
+The results are saved to the output directory, with each permutation result stored in a separate csv file.
 
 Parameters:
 ----------
@@ -39,16 +39,16 @@ if __name__=='__main__':
     import pandas as pd
     import concurrent.futures
     from calvin_utils.permutation_analysis_utils.permutation_utils.palm import permute_column
-    from calvin_utils.statistical_utils.voxelwise_statistical_testing import voxelwise_interaction_f_stat
+    from calvin_utils.statistical_utils.voxelwise_statistical_testing import voxelwise_r_squared
     from calvin_utils.permutation_analysis_utils.multiprocessing_utils.memory_management import MemoryCheckingExecutor
     from calvin_utils.file_utils.script_printer import ScriptInfo
     from calvin_utils.permutation_analysis_utils.scripts_for_submission.script_descriptions import script_dict
     from concurrent.futures import ProcessPoolExecutor, as_completed
 
 
-    #----------------------------------------------------------------Begin User Input----------------------------------------------------------------
+    #----------------------------------------------------------------Begin User Input
     script_info = ScriptInfo(script_dict)
-    parser = script_info.create_argparse_parser('launch_f_test_palm.py')
+    parser = script_info.create_argparse_parser('launch_voxelwise_coefficient_t_test_palm.py')
     args = parser.parse_args()
     
     # Parse the list arguments as actual lists (not strings)
@@ -57,6 +57,7 @@ if __name__=='__main__':
     args.neuroimaging_df_paths = ast.literal_eval(args.neuroimaging_df_paths)
 
     print(args)
+    
     #----------------------------------------------------------------END USER INPUT----------------------------------------------------------------
     #Prepare inputs and outputs
     os.makedirs(args.out_dir, exist_ok=True)
@@ -75,8 +76,8 @@ if __name__=='__main__':
     for path in args.neuroimaging_df_paths:
         neuroimaging_matrix = pd.read_csv(path)
         neuroimaging_dfs.append(neuroimaging_matrix)		
+        
     #----------------------------------------------------------------Generate Observed Distribution
-    # with MemoryCheckingExecutor(max_workers=int(args.n_cores), task_memory_gb=int(args.memory_per_job)) as executor: #<----to implement later
     with ProcessPoolExecutor(max_workers=int(args.n_cores)) as executor:
         # Begin submitting the masked data to the permutor
         results = []
@@ -93,8 +94,7 @@ if __name__=='__main__':
                 neuroimaging_df.index = permute_column(neuroimaging_df.index.to_numpy(), looped_permutation=True).reshape(-1)
             #----------------------------------------------------------------Submit the job
             # Submit the matrix for calculation
-            result = executor.submit(voxelwise_interaction_f_stat, outcomes_df, neuroimaging_dfs, clinical_dfs,
-                                    model_type='linear', manual_f_stat=False, manual_g_stat=False, permutation=True)
+            result = executor.submit(voxelwise_r_squared, outcomes_df, neuroimaging_dfs, clinical_dfs)
             results.append(result)
         
         for idx, result in enumerate(concurrent.futures.as_completed(results)):
