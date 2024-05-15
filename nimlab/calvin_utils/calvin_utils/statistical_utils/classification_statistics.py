@@ -8,11 +8,169 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.metrics import accuracy_score, confusion_matrix
+import os
+from math import pi
+
+import seaborn as sns
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, precision_recall_fscore_support, confusion_matrix
+
+class BinaryDataMetricsPlotter:
+    def __init__(self, dataframe, mapping_dict):
+        """
+        Initialize with a dataframe containing binary data and a dictionary mapping columns.
+        """
+        self.dataframe = dataframe
+        self.mapping_dict = mapping_dict
+
+    def calculate_metrics(self):
+        metrics = {}
+        for old_col, new_col in self.mapping_dict.items():
+            tn, fp, fn, tp = confusion_matrix(self.dataframe[old_col], self.dataframe[new_col]).ravel()
+            
+            sensitivity = tp / (tp + fn) if (tp + fn) != 0 else 0
+            specificity = tn / (tn + fp) if (tn + fp) != 0 else 0
+            ppv = tp / (tp + fp) if (tp + fp) != 0 else 0  # Positive Predictive Value
+            npv = tn / (tn + fn) if (tn + fn) != 0 else 0  # Negative Predictive Value
+            acc = accuracy_score(self.dataframe[old_col], self.dataframe[new_col])
+            precision, recall, f1, _ = precision_recall_fscore_support(self.dataframe[old_col], self.dataframe[new_col], average='binary')
+
+            metrics[(old_col, new_col)] = {
+                'Sensitivity': sensitivity,
+                'Specificity': specificity,
+                'Precision': precision,
+                'PPV': ppv,
+                'NPV': npv,
+                'Accuracy': acc,
+                'F1 Score': f1
+            }
+        return metrics
+    
+    def plot_radar_charts(self, metrics, save_dir, specified_metrics=None):
+        if specified_metrics is None:
+            specified_metrics = ['Sensitivity', 'Specificity', 'Precision', 'PPV', 'NPV', 'Accuracy', 'F1 Score']
+        num_plots = len(metrics)
+        color_map = ['purple', 'green', 'blue', 'orange', 'red', 'brown', 'pink']  # More colors for more plots
+
+        for idx, ((old_col, new_col), metric_values) in enumerate(metrics.items()):
+            plt.figure(figsize=(6, 6))
+            ax = plt.subplot(111, polar=True)
+
+            categories = specified_metrics
+            N = len(categories)
+
+            angles = [n / float(N) * 2 * pi for n in range(N)]
+            angles += angles[:1]
+
+            ax.set_theta_offset(pi / 2)
+            ax.set_theta_direction(-1)
+
+            plt.xticks(angles[:-1], categories)
+
+            ax.set_rlabel_position(0)
+            plt.yticks([0.2, 0.4, 0.6, 0.8], ["0.2","0.4","0.6","0.8"], color="black", size=12)
+            plt.ylim(0,1)
+
+            values = [metric_values[metric] for metric in specified_metrics]
+            values += values[:1]
+            ax.plot(angles, values, linewidth=1, linestyle='solid', label=f'{old_col} to {new_col}', color=color_map[2])
+
+            plt.legend(loc='upper right', bbox_to_anchor=(0.1, 0.1))
+            plt.title(f'Metrics for "{old_col} to {new_col}"', size=15, color='black', y=1.1)
+
+            radar_plots_subdir = "radar_plots"
+            os.makedirs(os.path.join(save_dir, radar_plots_subdir), exist_ok=True)
+
+            file_name_png = f"{old_col}_to_{new_col}_radar.png"
+            file_name_svg = f"{old_col}_to_{new_col}_radar.svg"
+            path_png = os.path.join(save_dir, radar_plots_subdir, file_name_png)
+            path_svg = os.path.join(save_dir, radar_plots_subdir, file_name_svg)
+
+            plt.savefig(path_png, format='png')
+            plt.savefig(path_svg, format='svg')
+            plt.show()
+
+            plt.close()
+
+    def plot_metrics(self, metrics, specified_metrics=None, save_dir=None):
+        print(metrics)
+        if specified_metrics is None:
+            specified_metrics = ['Sensitivity', 'Specificity', 'Precision', 'PPV', 'NPV', 'Accuracy', 'F1 Score']
+
+        plot_data = []
+        for (old_col, new_col), metric_values in metrics.items():
+            for metric_name, metric_value in metric_values.items():
+                if metric_name in specified_metrics:
+                    plot_data.append({
+                        'Mapping': f'{old_col} to {new_col}',
+                        'Metric': metric_name,
+                        'Value': metric_value
+                    })
+
+        plot_df = pd.DataFrame(plot_data)
+
+        # Create the plot
+        plt.figure(figsize=(10, 6))
+        sns.barplot(x="Value", y="Mapping", hue="Metric", data=plot_df)
+
+        plt.xlabel('Metric Value')
+        plt.ylabel('Column Mapping')
+        plt.title('Performance Metrics for Each Column Mapping')
+
+        plt.legend()
+        plt.tight_layout()
+        if save_dir is not None:
+            subdir = "bar_plots"
+            os.makedirs(os.path.join(save_dir, subdir), exist_ok=True)
+
+            file_name_png = f"{old_col}_to_{new_col}_bar.png"
+            file_name_svg = f"{old_col}_to_{new_col}_bar.svg"
+            path_png = os.path.join(save_dir, subdir, file_name_png)
+            path_svg = os.path.join(save_dir, subdir, file_name_svg)
+            plt.savefig(path_png, format='png')
+            plt.savefig(path_svg, format='svg')
+
+        plt.show()
+    
+    @staticmethod
+    def convert_metrics_to_dataframe(metrics_dict):
+        """
+        Converts the provided metrics dictionary into a pandas DataFrame.
+
+        Args:
+        metrics_dict (dict): A dictionary where each key is a tuple containing two strings
+                            (categories) and each value is another dictionary containing
+                            various metrics.
+
+        Returns:
+        pandas.DataFrame: A DataFrame with the metrics organized in columns and categories in rows.
+        """
+        import pandas as pd
+
+        # Convert the dictionary to a DataFrame
+        df = pd.DataFrame(metrics_dict).T
+
+        # Setting the names for the multi-index and resetting it to make it part of the DataFrame
+        df.columns.name = 'Metric'
+        df.index.set_names(['Category', 'Subcategory'], inplace=True)
+        df.reset_index(inplace=True)
+
+        return df
+
 
 class ClassificationEvaluation:
     """
     This is a class which will either take a fitted Statsmodels Model Object and a dataframe of observations,
     or it will take a dataframe of predictions and a dataframe of observations. 
+    
+    It will expect observations dataframeto take the form where actuals are one-hot encoded:
+    [[0, 1, 0, 0],
+      1, 0 ,0 ,0]]
+      
+    It will expect predictions dataframeto take the form where prediction for a given classificition is an array of probability:
+    [[0.2, 0.7, 0.1, 0.0],
+      0.9, 0.05, 0.05, 0.0]]
     
     Will extract various metrics such as accuracy, sensitivity, specificity, PPV, and NPV.
     Will generate a heatmap, normalized as you please.
@@ -50,7 +208,7 @@ class ClassificationEvaluation:
         
         Args:
             fitted_model: The result object from a fitted statsmodels MNLogit model.
-            outcome_matrix: A pandas DataFrame with the true class outcomes in one-hot encoded format.
+            observation_df: A pandas DataFrame with the true class outcomes in one-hot encoded format.
             normalization: Normalization method for the confusion matrix (None, 'true', 'pred', 'all').
             predictions_df: Manually entered DataFrame of predictions, can contain probabilities or dummy-coded predictions.
             thresholds (dict): a dictionary mapping the index of the threshold to the probability threshold to make that classification. 
@@ -513,7 +671,11 @@ class MacroAverageROC(MulticlassOneVsAllROC):
         # Then interpolate all ROC curves at these points
         mean_tpr = np.zeros_like(all_fpr)
         for i in range(n_classes):
-            fpr, tpr, _ = roc_curve(self.outcome_matrix.iloc[:, i], self.results.predict()[:, i])
+            if self.results is not None:
+                fpr, tpr, _ = roc_curve(self.outcome_matrix.iloc[:, i], self.results.predict()[:, i])
+            else:
+                fpr, tpr, _ = roc_curve(self.outcome_matrix[:, i], self.predictions[:, i])
+            
             mean_tpr += np.interp(all_fpr, fpr, tpr)
         
         # Finally average it and compute AUC
@@ -562,7 +724,10 @@ class MicroAverageROC(MacroAverageROC):
         """
         n_classes = self.outcome_matrix.shape[1]
         # Aggregate all false positive rates and true positive rates
-        fpr, tpr, thresholds = roc_curve(self.outcome_matrix.to_numpy().ravel(), self.results.predict().ravel())
+        if self.results is not None:
+            fpr, tpr, _ = roc_curve(self.outcome_matrix.to_numpy().ravel(), self.results.to_numpy().ravel())
+        else:            
+            fpr, tpr, thresholds = roc_curve(self.outcome_matrix.to_numpy().ravel(), self.results.predict().ravel())
         
         roc_auc = auc(fpr, tpr)
         
