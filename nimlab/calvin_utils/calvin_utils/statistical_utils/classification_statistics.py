@@ -284,7 +284,7 @@ class BinaryDataMetricsPlotter:
             self.plot_macro_averages()
         
 
-class ClassificationEvaluation:
+class MulticlassClassificationEvaluation:
     """
     This is a class which will either take a fitted Statsmodels Model Object and a dataframe of observations,
     or it will take a dataframe of predictions and a dataframe of observations. 
@@ -697,7 +697,7 @@ class ClassificationEvaluation:
         self.plot_radar_chart()
         self.rasterized_probability_plot()
 
-class MulticlassOneVsAllROC(ClassificationEvaluation):
+class MulticlassOneVsAllROC(MulticlassClassificationEvaluation):
     """
     Extends ModelEvaluation to include ROC curve generation for each class
     in a multinomial logistic regression model.

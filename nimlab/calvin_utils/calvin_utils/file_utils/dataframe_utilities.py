@@ -2,6 +2,33 @@ import os
 import pandas as pd
 from natsort import natsorted
 
+def convert_to_ordinal(data_df, columns):
+    """
+    Convert unique values in specified columns of a DataFrame to ordinal values and print the mapping.
+
+    Parameters:
+    - data_df (pd.DataFrame): DataFrame containing the data to be converted.
+    - columns (list): List of column names to be converted to ordinal values.
+
+    Returns:
+    - ordinal_df (pd.DataFrame): DataFrame with specified columns converted to ordinal values.
+    - mapping_dict (dict): Dictionary showing the mapping of original values to ordinal values for each column.
+    """
+    ordinal_df = data_df.copy()
+    mapping_dict = {}
+
+    for column in columns:
+        if column in ordinal_df.columns:
+            ordinal_df[column] = pd.Categorical(ordinal_df[column]).codes
+            unique_values = pd.Categorical(data_df[column]).categories
+            mapping_dict[column] = {category: code for code, category in enumerate(unique_values)}
+
+    print("Mapping of unique values to ordinal values:")
+    for column, mapping in mapping_dict.items():
+        print(f"{column}: {mapping}")
+
+    return ordinal_df, mapping_dict
+
 def natsort_df(df):
     #Sort the Dataframe            
     df = df.reindex(index=natsorted(df.index))
