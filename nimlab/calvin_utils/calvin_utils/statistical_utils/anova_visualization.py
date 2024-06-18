@@ -302,3 +302,75 @@ class QuickANOVAPlot:
         if self.out_dir is not None:
             plt.savefig(os.path.join(self.out_dir, 'anova_plot.svg'))
         plt.show()
+        
+    def plot_bar(self, x_var, hue_var, cohort_var=None, y='predictions', y_label='Predictions', title='Bar Plot of Predictions', error_bar='ci'):
+        """
+        Creates a bar plot using the specified variables.
+
+        Parameters:
+        -----------
+        x_var : str
+            The variable to be plotted on the x-axis.
+        hue_var : str
+            The variable to differentiate bars within the plot.
+        cohort_var : str, optional
+            The variable to differentiate cohorts with different colors. If None, cohorts are not differentiated.
+        y : str, optional
+            The variable to plot on the y-axis. If 'predictions' (default), will plot the model's predictions.
+        y_label : str, optional
+            Label for the y-axis. Default is 'Predictions'.
+        title : str, optional
+            Title for the plot. Default is 'Bar Plot of Predictions'.
+        error_bar : str, optional
+            The size of the confidence interval to draw when aggregating with an estimator. Default is 'ci'.
+            options: 'ci' | 'sd' | 'se' | None
+        """
+        if self.predictions is None:
+            raise ValueError("Predictions have not been made yet. Call make_predictions() first.")
+
+        # Convert the design matrix to a DataFrame if it isn't already
+        if not isinstance(self.design_matrix, pd.DataFrame):
+            self.design_matrix = pd.DataFrame(self.design_matrix)
+
+        # Add predictions to the design matrix DataFrame
+        self.design_matrix['predictions'] = self.predictions
+
+        # Ensure variables are in the design matrix
+        if x_var not in self.design_matrix.columns or hue_var not in self.design_matrix.columns or (cohort_var and cohort_var not in self.design_matrix.columns):
+            raise ValueError("Variables for x, hue, or cohort are not in the design matrix.")
+
+        # Plot the bar plot
+        sns.set(style="whitegrid")
+        plt.figure(figsize=(10, 8))
+        y_label = y_label.capitalize()
+        title = title
+
+        # Bar plot with hue and cohort differentiation
+        if cohort_var is not None:
+            sns.barplot(
+                x=x_var, 
+                y=y, 
+                hue=hue_var, 
+                data=self.design_matrix,
+                errorbar=error_bar,
+                palette='tab10'
+            )
+            plt.legend(title=cohort_var, loc='upper right')
+        else:
+            sns.barplot(
+                x=x_var, 
+                y=y, 
+                hue=hue_var, 
+                data=self.design_matrix,
+                errorbar=error_bar,
+                palette='tab10'
+            )
+
+        plt.xlabel(x_var)
+        plt.ylabel(y_label)
+        plt.title(title)
+        sns.despine()
+        plt.grid(False)
+        if self.out_dir is not None:
+            plt.savefig(os.path.join(self.out_dir, 'bar_plot.svg'))
+        plt.show()

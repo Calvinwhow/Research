@@ -636,9 +636,9 @@ def generate_r_map(matrix_df, mask_path=None, method='pearson', tqdm_on=True):
     loop_range = tqdm(range(matrix_df.shape[1])) if tqdm_on else range(matrix_df.shape[1])
     for i in loop_range:
         if method=='pearson':
-            r, p = pearsonr(outcomes_df, np.abs(matrix_df.iloc[:,i]))
+            r, p = pearsonr(outcomes_df, matrix_df.iloc[:,i])
         elif method=='spearman':
-            r, p = spearmanr(outcomes_df, np.abs(matrix_df.iloc[:,i]))
+            r, p = spearmanr(outcomes_df, matrix_df.iloc[:,i])
         else:
             raise ValueError("Invalid method. Choose either 'spearman' or 'pearson'.")
             

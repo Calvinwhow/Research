@@ -323,6 +323,21 @@ class GiiNiiFileImport:
         unmasked_df.iloc[mask_indices, :] = df
         return unmasked_df
     
+    @staticmethod
+    def splice_colnames(df, pre, post):
+        raw_names = df.columns
+        name_mapping = {}
+        # For each column name in the dataframe
+        for name in raw_names:
+            new_name = name  # Default to the original name in case it doesn't match any split command
+            new_name = new_name.split(pre)[1]
+            new_name = new_name.split(post)[0]
+            
+            # Add the original and new name to the mapping
+            name_mapping[name] = new_name
+        return df.rename(columns=name_mapping)
+    
+    
     def run(self):
         self.import_data_based_on_type()
         return self.matrix_df

@@ -9,7 +9,6 @@ class RegressOutCovariates():
         formula_dict = {}
         for dep_var in dependent_variable_list:
             formula = dep_var
-            print()
             for covariate in covariates_list:
                 if covariate == covariates_list[0]:
                     formula += f" ~ {covariate}"
@@ -20,7 +19,7 @@ class RegressOutCovariates():
             else:
                  formula += f" - 1"
             formula_dict[dep_var] = formula
-            print(f"Formula for {dep_var}: \n", formula) if verbose else None
+            print(f"\n Formula for {dep_var}: \n", formula) if verbose else None
         return formula_dict
     
     @staticmethod
