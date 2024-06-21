@@ -2,7 +2,7 @@
 # This script processes brain imaging data within a a BIDS directory that was mounted to a Dockerfile.
 
 ROOTDIR="/data" 
-FWHM=6
+FWHM=0
 
 # Tell freesurfer where the subjects are
 export SUBJECTS_DIR=/data

@@ -32,12 +32,6 @@ RUN dpkg-reconfigure --frontend=noninteractive locales
 RUN update-locale LANG="en_US.UTF-8" 
 RUN chmod 777 /opt && chmod a+s /opt 
 RUN mkdir -p /neurodocker 
-# RUN if [ ! -f "$ND_ENTRYPOINT" ]; then \
-#          echo '#!/usr/bin/env bash' >> "$ND_ENTRYPOINT" 
-# RUN echo 'set -e' >> "$ND_ENTRYPOINT" 
-# RUN echo 'export USER="${USER:=`whoami`}"' >> "$ND_ENTRYPOINT" 
-# RUN echo 'if [ -n "$1" ]; then "$@"; else /usr/bin/env bash; fi' >> "$ND_ENTRYPOINT"; \
-#     fi 
 RUN mkdir -p /neurodocker && \
     if [ ! -f "$ND_ENTRYPOINT" ]; then \
         echo '#!/usr/bin/env bash' >> "$ND_ENTRYPOINT" && \
@@ -46,51 +40,7 @@ RUN mkdir -p /neurodocker && \
         echo 'if [ -n "$1" ]; then "$@"; else /usr/bin/env bash; fi' >> "$ND_ENTRYPOINT"; \
     fi && \
     chmod -R 777 /neurodocker && chmod a+s /neurodocker
-
-# RUN chmod -R 777 /neurodocker && chmod a+s /neurodocker
-
 ENTRYPOINT ["/neurodocker/startup.sh"]
-
-## Prepare Freesurfer Installation 
-RUN echo "Installing FREESURFER_VERSION=7.4.1"
-ARG FREESURFER_TARBALL="https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.4.1/freesurfer-linux-ubuntu20_amd64-7.4.1.tar.gz"
-ENV FREESURFER_HOME="/opt/freesurfer-7.4.1" \
-    PATH="/opt/freesurfer-7.4.1/bin:$PATH"
-RUN apt-get update -qq \
-    && apt-get install -y -q --no-install-recommends \
-           bc \
-           libgomp1 \
-           libxmu6 \
-           libxt6 \
-           perl \
-           tcsh \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && echo "Downloading FreeSurfer ..." \
-    && mkdir -p /opt/freesurfer-7.4.1 \
-    && curl -fsSL --retry 5 ${FREESURFER_TARBALL} \
-    | tar -xz -C /opt/freesurfer-7.4.1 --strip-components 1 \
-         --exclude='freesurfer/average/mult-comp-cor' \
-         --exclude='freesurfer/lib/cuda' \
-         --exclude='freesurfer/lib/qt' \
-         --exclude='freesurfer/subjects/V1_average' \
-         --exclude='freesurfer/subjects/bert' \
-         --exclude='freesurfer/subjects/cvs_avg35' \
-         --exclude='freesurfer/subjects/cvs_avg35_inMNI152' \
-         --exclude='freesurfer/subjects/fsaverage3' \
-         --exclude='freesurfer/subjects/fsaverage4' \
-         --exclude='freesurfer/subjects/fsaverage6' \
-         --exclude='freesurfer/subjects/fsaverage_sym' \
-         --exclude='freesurfer/trctrain' \
-    && sed -i '$isource "/opt/freesurfer-7.4.1/SetUpFreeSurfer.sh"' "$ND_ENTRYPOINT"
-
-RUN echo "choward12@bwh.harvard.edu\n\
-73039\n\
- *CYAwWQnpSLwU\n\
- FSiZSmqurbBMM\n\
- dx/0G84mNGBdFU9g25cMM50qzC1hbiH+4FvMsDPrvfs=\n"\
- > /opt/freesurfer-7.4.1/license.txt
-
 
 ## Prepare FSL Instllation 
 ENV FSLDIR="/opt/fsl-6.0.3" \
@@ -142,12 +92,6 @@ RUN echo '{ \
     \n    [ \
     \n      "base", \
     \n      "debian:stretch" \
-    \n    ], \
-    \n    [ \
-    \n      "freesurfer", \
-    \n      { \
-    \n        "version": "6.0.1" \
-    \n      } \
     \n    ], \
     \n    [ \
     \n      "fsl", \
