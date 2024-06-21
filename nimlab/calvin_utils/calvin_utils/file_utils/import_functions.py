@@ -1,4 +1,5 @@
 ## Paths Input Here
+from nimlab import datasets as nimds
 from matplotlib import pyplot as plt
 import warnings
 warnings.filterwarnings('ignore')
@@ -289,6 +290,53 @@ class GiiNiiFileImport:
                 print(f"Saving to: {os.path.join(out_dir, nifti_name)}")
             else:
                 view_and_save_nifti(dataframe.iloc[:, i], out_dir=out_dir, output_name=nifti_name, silent=True)
+    
+    @staticmethod
+    def mask_dataframe(df: pd.DataFrame, mask_path: str=None, threshold: float=0):
+        """
+        Simple masking function.
+        """
+        if mask_path is None:
+            mask = nimds.get_img("mni_icbm152")
+        else:
+            mask = nib.load(mask_path)
+            
+        mask = mask.get_fdata().flatten()
+        mask_indices = mask > threshold
+        masked_df = df.loc[mask_indices, :]
+
+        return mask, mask_indices, masked_df
+    
+    @staticmethod
+    def unmask_dataframe(df: pd.DataFrame, mask_path: str=None, threshold: float=0):
+        """
+        Simple unmasking function.
+        """
+        if mask_path is None:
+            mask = nimds.get_img("mni_icbm152")
+        else:
+            mask = nib.load(mask_path)
+        mask = mask.get_fdata().flatten()
+        mask_indices = mask > threshold
+        
+        unmasked_df = pd.DataFrame(index=mask, columns=df.columns, data=0)
+        unmasked_df.iloc[mask_indices, :] = df
+        return unmasked_df
+    
+    @staticmethod
+    def splice_colnames(df, pre, post):
+        raw_names = df.columns
+        name_mapping = {}
+        # For each column name in the dataframe
+        for name in raw_names:
+            new_name = name  # Default to the original name in case it doesn't match any split command
+            new_name = new_name.split(pre)[1]
+            new_name = new_name.split(post)[0]
+            
+            # Add the original and new name to the mapping
+            name_mapping[name] = new_name
+        return df.rename(columns=name_mapping)
+    
     
     def run(self):
         self.import_data_based_on_type()

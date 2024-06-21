@@ -6,6 +6,8 @@ from statsmodels.stats.multitest import multipletests
 import statsmodels.formula.api as smf
 from statsmodels.stats.diagnostic import het_breuschpagan
 from scipy.stats import chi2, t, f
+from statsmodels.regression.linear_model import OLS
+from statsmodels.tools import add_constant
 
 from scipy.stats import spearmanr, pearsonr
 from tqdm import tqdm
@@ -15,6 +17,7 @@ import nibabel as nib
 from nimlab import datasets as nimds
 
 from calvin_utils.nifti_utils.matrix_utilities import unmask_matrix, mask_matrix
+from sklearn.linear_model import LinearRegression
 
 
 def generate_interaction_features(df):
@@ -447,6 +450,58 @@ def voxelwise_interaction_f_stat(outcome_df, predictor_neuroimaging_dfs, predict
     else:
         return results_df['statistic'], results_df, temp_df
     
+def voxelwise_r_squared(outcome_df, predictor_neuroimaging_dfs, predictor_covariate_dfs, get_coefficients=False):
+    """
+    Perform voxelwise regression using numpy arrays and Statsmodels, calculating R-squared for each voxel.
+    
+    Parameters:
+        outcome_df (pd.DataFrame): DataFrame containing the outcome variable with observations in rows.
+        predictor_neuroimaging_dfs (list of pd.DataFrame): List of DataFrames with neuroimaging data, observations in rows, voxels in columns.
+        predictor_covariate_dfs (list of pd.DataFrame): List of DataFrames with covariate data, observations in rows.
+        get_coefficients (bool): Boolean regarding whether or not to calculate/return coefficients. 
+
+    Returns:
+        results_df (pd.DataFrame): DataFrame containing R-squared for each voxel.
+    """
+    
+    # Extract outcome data from DataFrame and standardize it
+    y = outcome_df.iloc[:, 0].values[:, np.newaxis]  # dynamically access the first (and only) column
+    y_mean = np.mean(y)
+    y_std = np.std(y)
+    y = (y - y_mean) / y_std
+    
+    # Concatenate all covariate arrays and standardize
+    if predictor_covariate_dfs:
+        covariate_arrays = [df.values for df in predictor_covariate_dfs]
+        X_covariates = np.hstack(covariate_arrays)
+    else:
+        X_covariates = np.empty((len(y), 0))  # No covariates
+        
+    # Initialize a list to store the results for each voxel
+    results = {}
+    if get_coefficients:
+        coefficients = {}
+    
+    # Loop through each voxel in the neuroimaging data
+    for voxel in tqdm((predictor_neuroimaging_dfs[0].index), desc="Calculating R-squared for each voxel"):
+        # Gather data for this voxel from all neuroimaging dataframes (assuming each has the same structure)
+        X_voxel = np.hstack([df.loc[voxel, :].values[:, np.newaxis] for df in predictor_neuroimaging_dfs])
+        # Combine covariates and voxel-specific data
+        X = np.hstack((X_covariates, X_voxel))
+
+        # Fit the linear regression model
+        model = OLS(y, X).fit()
+        
+        # Collect R-squared
+        results[voxel] = {'R_squared': model.rsquared}
+        if get_coefficients:
+            results[voxel] = {'R_squared': model.rsquared, 'Coefficients': model.params}
+
+    # Convert results to DataFrame
+    results_df = pd.DataFrame.from_dict(results, orient='index')
+    return results_df
+
+    
 #--------DEVELOPMENT--------
 def voxelwise_interaction_t_stat(outcome_df, predictor_neuroimaging_dfs, predictor_clinical_dfs, model_type='linear', manual_t_stat=False, permutation=False, comprehensive_results=False):
     """
@@ -581,9 +636,9 @@ def generate_r_map(matrix_df, mask_path=None, method='pearson', tqdm_on=True):
     loop_range = tqdm(range(matrix_df.shape[1])) if tqdm_on else range(matrix_df.shape[1])
     for i in loop_range:
         if method=='pearson':
-            r, p = pearsonr(outcomes_df, np.abs(matrix_df.iloc[:,i]))
+            r, p = pearsonr(outcomes_df, matrix_df.iloc[:,i])
         elif method=='spearman':
-            r, p = spearmanr(outcomes_df, np.abs(matrix_df.iloc[:,i]))
+            r, p = spearmanr(outcomes_df, matrix_df.iloc[:,i])
         else:
             raise ValueError("Invalid method. Choose either 'spearman' or 'pearson'.")
             

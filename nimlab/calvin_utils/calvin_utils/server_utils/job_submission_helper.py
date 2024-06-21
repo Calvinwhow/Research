@@ -144,7 +144,7 @@ class LSFJob(Job):
                 formatted.append('--' + key + ' "' + str(value) + '"')  # Else, simply enclose value with double quotes
         return ' '.join(formatted)
                 
-    def construct_command(self):
+    def construct_command(self, server='LSF'):
         """
         Returns the job command specific to the LSF job scheduler.
         """
@@ -152,11 +152,28 @@ class LSFJob(Job):
         self.resource_request = f"-R '{self.resource_req}' " if self.resource_req else ""
         self.memory_limit = f"-M {self.mem_limit}" if self.mem_limit else ""
         formatted_options = self.format_command_options(self.options)
+        if server=='LSF':
+            if self.n_jobs:  # If n_jobs is defined
+                job_command = f"bsub -q {self.queue} -n {self.cpus} {self.resource_request} {self.memory_limit} -o {self.output_dir}/{self.job_name}_%I.txt -J '{self.job_name}[1-{self.n_jobs}]' -u {self.user_email} -cwd {self.work_dir} '{activation_string} python {self.script_path} {formatted_options}'"
+            else:  # If n_jobs is not defined
+                job_command = f"bsub -q {self.queue} -n {self.cpus} {self.resource_request} {self.memory_limit} -o {self.output_dir}/{self.job_name}.txt -J '{self.job_name}' -u {self.user_email} -cwd {self.work_dir} '{activation_string} python {self.script_path} {formatted_options}'"
+            return job_command
 
-        if self.n_jobs:  # If n_jobs is defined
-            job_command = f"bsub -q {self.queue} -n {self.cpus} {self.resource_request} {self.memory_limit} -o {self.output_dir}/{self.job_name}_%I.txt -J '{self.job_name}[1-{self.n_jobs}]' -u {self.user_email} -cwd {self.work_dir} '{activation_string} python {self.script_path} {formatted_options}'"
-        else:  # If n_jobs is not defined
-            job_command = f"bsub -q {self.queue} -n {self.cpus} {self.resource_request} {self.memory_limit} -o {self.output_dir}/{self.job_name}.txt -J '{self.job_name}' -u {self.user_email} -cwd {self.work_dir} '{activation_string} python {self.script_path} {formatted_options}'"
-        return job_command
 
-
+#   eristwo-slurm:
+#     submit-command: "sbatch "
+#     hostname: "eristwo.partners.org"
+#     queue-name: "#SBATCH -p &"
+#     job-name: "#SBATCH -J &"
+#     standard-output: "#SBATCH -o &/slurm.%N.%j.out"
+#     error-output: "#SBATCH -e &/slurm.%N.%j.err"
+#     job-time: "#SBATCH -t &"
+#     num-nodes: "#SBATCH --nodes &"
+#     num-tasks: "#SBATCH --ntasks &"
+#     cores: "#SBATCH -c &"
+#     memory: "#SBATCH --mem &"
+#     x11-forwarding: ""
+#     service-class: "#SBATCH --qos &"
+#     mail-type: "#SBATCH --mail-type=END" # NONE, BEGIN, END, FAIL, REQUEUE, ALL (Please avoid: Equivalent to BEGIN, END, FAIL, INVALID_DEPEND, REQUEUE, and STAGE_OUT), INVALID_DEPEND (dependency never satisfied), STAGE_OUT (burst buffer stage out and teardown completed), TIME_LIMIT, TIME_LIMIT_90 (reached 90 percent of time limit), TIME_LIMIT_80 (reached 80 percent of time limit), TIME_LIMIT_50 (reached 50 percent of time limit) and ARRAY_TASKS (Please also avoid: Send emails for each array task).
+#     mail-address: "#SBATCH --mail-user=&"
+#     environment-setup: "source activate nimlab"

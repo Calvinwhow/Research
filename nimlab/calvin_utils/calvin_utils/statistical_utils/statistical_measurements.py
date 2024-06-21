@@ -600,22 +600,22 @@ import pandas as pd
 
 class EstimatedMarginalMean(FactorialPlot):
 
-    def create_interaction_plot_dynamic(self, emm_df, categorical_vars, ms=10, out_dir=None):
-        """
-        Create an interaction plot for 2 or 3 categorical variables in emm_df.
+    # def create_interaction_plot_dynamic(self, emm_df, categorical_vars, ms=10, out_dir=None):
+    #     """
+    #     Create an interaction plot for 2 or 3 categorical variables in emm_df.
 
-        Parameters:
-        - emm_df: DataFrame containing the data
-        - categorical_vars: List of strings specifying the categorical variables
-        - ms: Marker size for the plot (default is 10)
-        """
-        # Check if we have 2 or 3 categorical variables
-        if len(categorical_vars) == 2:
-            self.plot_interaction_2_vars(emm_df, categorical_vars, ms, out_dir)
-        elif len(categorical_vars) == 3:
-            self.plot_interaction_3_vars(emm_df, categorical_vars, ms, out_dir)
-        else:
-            print("This function supports only 2 or 3 categorical variables.")
+    #     Parameters:
+    #     - emm_df: DataFrame containing the data
+    #     - categorical_vars: List of strings specifying the categorical variables
+    #     - ms: Marker size for the plot (default is 10)
+    #     """
+    #     # Check if we have 2 or 3 categorical variables
+    #     if len(categorical_vars) == 2:
+    #         self.plot_interaction_2_vars(emm_df, categorical_vars, ms, out_dir)
+    #     elif len(categorical_vars) == 3:
+    #         self.plot_interaction_3_vars(emm_df, categorical_vars, ms, out_dir)
+    #     else:
+    #         print("This function supports only 2 or 3 categorical variables.")
 
     def plot_interaction_2_vars(self, emm_df, categorical_vars, ms, out_dir=None):
         # Customize your plot here for 2 categorical variables
@@ -685,12 +685,6 @@ class EstimatedMarginalMean(FactorialPlot):
         age_legend_labels = [f'{categorical_vars[2]}: {age_group}' for age_group in emm_df[categorical_vars[2]].unique()]
         age_legend_handles = [plt.Line2D([0], [0], linestyle=line_styles[i], color='black') for i in range(len(age_legend_labels))]
         ax2 = plt.gca().add_artist(ax.legend(age_legend_handles, age_legend_labels, title=categorical_vars[2], loc='upper right'))
-
-        # # Create a third legend to link City to its color
-        # city_legend_labels = [f'{city} (color)' for city in emm_df[categorical_vars[1]].unique()]
-        # city_legend_handles = [plt.Line2D([0], [0], color=city_color_mapping[city]) for city in emm_df[categorical_vars[1]].unique()]
-        # ax.legend(city_legend_handles, city_legend_labels, title='City-Color', loc='lower left')
-        # ax2 = plt.gca().add_artist(ax.legend(age_legend_handles, age_legend_labels, title='Age_Group', loc='upper right'))
 
         # Third legend: City colors
         city_legend_labels = [f'{city}' for city in emm_df[categorical_vars[1]].unique()]
@@ -1113,7 +1107,7 @@ class GLMMarginalsPlot():
                 - will find the mean value of the predictor within this combination of other levels and derive estimates of +/-2stdevs
         data_range (tuple, optional): Specifies the range (min, max) to vary continuous variables. If not provided, 
             the range is derived from the data.
-            - This is only used whel 'continuous' is specified.
+            - This is only used when 'continuous' is specified.
         out_dir (str, optional): Directory path to save the generated plots.
         variance_bars (str) sem | 95ci: how to plot the error bars. Set to None for no error bars.
         debug (bool): If True, enables debug mode for additional logging.
@@ -1291,6 +1285,7 @@ class GLMMarginalsPlot():
         # Make a copy of the original DataFrame
         marginal_df = self.data_df.copy()
         # Iterate over each key-value pair in the current scenario
+        continuous_values = None
         for key, value in current_marginal_scenario.items():
             # Make marginal predictions over a range of data
             if value == 'continuous':
@@ -1361,6 +1356,7 @@ class GLMMarginalsPlot():
         self.orchestrate_marginal_predictions()
         self.profile_plot()
 
+##
 def predict_outcomes(model, design_matrix):
     """
     Predicts the outcomes for each row in the data DataFrame based on the given model and formula.

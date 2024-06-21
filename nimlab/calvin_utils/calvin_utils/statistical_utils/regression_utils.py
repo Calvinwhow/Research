@@ -5,9 +5,9 @@ class RegressOutCovariates():
     Will regress on values and return residuals. Will add the residuals to a dataframe as <name>_residual and return the DF
     """
     @staticmethod
-    def generate_formula(independent_variable_list, covariates_list, intercept, verbose=True):
+    def generate_formula(dependent_variable_list, covariates_list, intercept, verbose=True):
         formula_dict = {}
-        for dep_var in independent_variable_list:
+        for dep_var in dependent_variable_list:
             formula = dep_var
             for covariate in covariates_list:
                 if covariate == covariates_list[0]:
@@ -15,11 +15,11 @@ class RegressOutCovariates():
                 else:
                     formula += f" + {covariate}"
             if intercept:
-                continue
+                pass
             else:
                  formula += f" - 1"
             formula_dict[dep_var] = formula
-            print(f"Formula for {dep_var}: \n", formula) if verbose else None
+            print(f"\n Formula for {dep_var}: \n", formula) if verbose else None
         return formula_dict
     
     @staticmethod
@@ -33,14 +33,14 @@ class RegressOutCovariates():
         return df, adjusted_indep_vars_list
     
     @staticmethod
-    def run(df, independent_variable_list, covariates_list, intercept=True):
+    def run(df, dependent_variable_list, covariates_list, intercept=True):
         """
         Params:
         
         df: pandas DF containing your covariates and independent variables
-        independent_variable_list: a list of indendent variables as found in the dataframe columns. 
+        dependent_variable_list: a list of dependent variables as found in the dataframe columns. 
         covariates_list: a list of covariates as found in the dataframe columns. 
         """
-        formula_dict = RegressOutCovariates.generate_formula(independent_variable_list, covariates_list, intercept)
+        formula_dict = RegressOutCovariates.generate_formula(dependent_variable_list, covariates_list, intercept)
         df, adjusted_indep_vars_list = RegressOutCovariates.regress_out_covariates(df, formula_dict)
         return df, adjusted_indep_vars_list

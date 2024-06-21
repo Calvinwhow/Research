@@ -2,6 +2,33 @@ import os
 import pandas as pd
 from natsort import natsorted
 
+def convert_to_ordinal(data_df, columns):
+    """
+    Convert unique values in specified columns of a DataFrame to ordinal values and print the mapping.
+
+    Parameters:
+    - data_df (pd.DataFrame): DataFrame containing the data to be converted.
+    - columns (list): List of column names to be converted to ordinal values.
+
+    Returns:
+    - ordinal_df (pd.DataFrame): DataFrame with specified columns converted to ordinal values.
+    - mapping_dict (dict): Dictionary showing the mapping of original values to ordinal values for each column.
+    """
+    ordinal_df = data_df.copy()
+    mapping_dict = {}
+
+    for column in columns:
+        if column in ordinal_df.columns:
+            ordinal_df[column] = pd.Categorical(ordinal_df[column]).codes
+            unique_values = pd.Categorical(data_df[column]).categories
+            mapping_dict[column] = {category: code for code, category in enumerate(unique_values)}
+
+    print("Mapping of unique values to ordinal values:")
+    for column, mapping in mapping_dict.items():
+        print(f"{column}: {mapping}")
+
+    return ordinal_df, mapping_dict
+
 def natsort_df(df):
     #Sort the Dataframe            
     df = df.reindex(index=natsorted(df.index))
@@ -56,6 +83,24 @@ def column_names_to_str(data_df):
     data_df.columns = [str(col) for col in data_df.columns]
     return data_df
 
+def save_design_matrix_to_csv(design_matrix, out_dir):
+    """
+    Saves DataFrame to CSV  and returns the path.
+
+    Parameters:
+    - design_matrix (DataFrame): A DataFrame.
+    - out_dir (str): Path to save to
+    
+    Returns:
+    - str: A path to the CSF.
+    """
+    # Create the directory if it doesn't exist
+    os.makedirs(out_dir, exist_ok=True)
+
+    path = (out_dir+"/design_matrix.csv")
+    design_matrix.to_csv(path, index=False)
+    return path
+
 def save_dataframes_to_csv(outcome_dfs, covariate_dfs, voxelwise_dfs, path_to_dataframes):
     """
     Saves DataFrames to CSV files and returns the paths.
@@ -79,17 +124,17 @@ def save_dataframes_to_csv(outcome_dfs, covariate_dfs, voxelwise_dfs, path_to_da
     # Iterate over the DataFrames, save them to CSV, and store the paths
     for i, df in enumerate(outcome_dfs):
         file_path = os.path.join(path_to_dataframes, f"outcome_data_{i+1}.csv")
-        df.to_csv(file_path, index=True)
+        df.to_csv(file_path, index=False)
         paths["outcomes"].append(file_path)
 
     for i, df in enumerate(covariate_dfs):
         file_path = os.path.join(path_to_dataframes, f"covariate_data_{i+1}.csv")
-        df.to_csv(file_path, index=True)
+        df.to_csv(file_path, index=False)
         paths["covariates"].append(file_path)
 
     for i, df in enumerate(voxelwise_dfs):
         file_path = os.path.join(path_to_dataframes, f"voxelwise_data_{i+1}.csv")
-        df.to_csv(file_path, index=True)
+        df.to_csv(file_path, index=False)
         paths["voxelwise"].append(file_path)
 
     return paths
