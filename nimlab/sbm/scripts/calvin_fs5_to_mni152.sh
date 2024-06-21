@@ -3,7 +3,7 @@
 # CRITICAL NOTE: DATA IS EXPECTED TO BE FOUND AT: $ROOTDIR/$sub/surf/$hemi.${sub}_thickness.${FWHM}.fs5.gii
 #       IF YOU NEED TO CHANGE FOR SOME REASON, EDIT LINE 35 TO MATCH YOU FILE NAMING ARCHITECTURE
 ROOTDIR="/data" 
-FWHM="6"
+FWHM="0"
 
 # Tell freesurfer where the subjects are
 export SUBJECTS_DIR=/data
